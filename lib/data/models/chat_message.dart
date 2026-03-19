@@ -1,259 +1,152 @@
-/// File name: chat_message.dart
-/// Author: Nguyễn Thị Linh
-/// Created: 2026-03-19
-/// Description: Chat message and quick action models for AI chatbot
-/// 
-/// Responsibilities:
-/// - Define ChatMessage model with sender, content, timestamp
-/// - Define QuickAction model for predefined suggestions
-/// - Provide JSON serialization/deserialization
+import 'package:flutter/material.dart';
 
-import 'package:uuid/uuid.dart';
+enum MessageRole { user, assistant, system }
+enum MessageType { text, financialSummary, suggestion, chart }
 
-/// Enum định nghĩa loại tin nhắn
-enum ChatMessageType {
-  user('user'),
-  assistant('assistant'),
-  system('system');
-
-  final String value;
-  const ChatMessageType(this.value);
-}
-
-/// Model đại diện cho một tin nhắn trong chat
 class ChatMessage {
-  /// ID duy nhất của tin nhắn
   final String id;
-
-  /// Người gửi tin nhắn (user hoặc assistant)
-  final ChatMessageType type;
-
-  /// Nội dung tin nhắn
+  final MessageRole role;
   final String content;
-
-  /// Thời gian gửi tin nhắn
+  final MessageType type;
   final DateTime timestamp;
-
-  /// Ngữ cảnh tài chính (nếu có)
-  final String? financialContext;
-
-  /// Lỗi nếu xảy ra (nếu có)
-  final String? error;
-
-  /// Trạng thái loading
   final bool isLoading;
+  final Map<String, dynamic>? metadata;
 
   ChatMessage({
-    String? id,
-    required this.type,
+    required this.id,
+    required this.role,
     required this.content,
+    this.type = MessageType.text,
     DateTime? timestamp,
-    this.financialContext,
-    this.error,
     this.isLoading = false,
-  })  : id = id ?? const Uuid().v4(),
-        timestamp = timestamp ?? DateTime.now();
+    this.metadata,
+  }) : timestamp = timestamp ?? DateTime.now();
 
-  /// Tạo bản sao với các thuộc tính thay đổi
   ChatMessage copyWith({
-    String? id,
-    ChatMessageType? type,
     String? content,
-    DateTime? timestamp,
-    String? financialContext,
-    String? error,
     bool? isLoading,
+    MessageType? type,
+    Map<String, dynamic>? metadata,
   }) {
     return ChatMessage(
-      id: id ?? this.id,
-      type: type ?? this.type,
+      id: id,
+      role: role,
       content: content ?? this.content,
-      timestamp: timestamp ?? this.timestamp,
-      financialContext: financialContext ?? this.financialContext,
-      error: error ?? this.error,
-      isLoading: isLoading ?? this.isLoading,
-    );
-  }
-
-  /// Chuyển đổi sang JSON
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'type': type.value,
-      'content': content,
-      'timestamp': timestamp.toIso8601String(),
-      'financialContext': financialContext,
-      'error': error,
-      'isLoading': isLoading,
-    };
-  }
-
-  /// Tạo từ JSON
-  factory ChatMessage.fromJson(Map<String, dynamic> json) {
-    return ChatMessage(
-      id: json['id'] as String,
-      type: ChatMessageType.values.firstWhere(
-        (e) => e.value == json['type'],
-        orElse: () => ChatMessageType.system,
-      ),
-      content: json['content'] as String,
-      timestamp: DateTime.parse(json['timestamp'] as String),
-      financialContext: json['financialContext'] as String?,
-      error: json['error'] as String?,
-      isLoading: json['isLoading'] as bool? ?? false,
-    );
-  }
-
-  @override
-  String toString() {
-    return 'ChatMessage(id: $id, type: ${type.value}, content: $content, timestamp: $timestamp)';
-  }
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is ChatMessage &&
-          runtimeType == other.runtimeType &&
-          id == other.id &&
-          type == other.type &&
-          content == other.content &&
-          timestamp == other.timestamp;
-
-  @override
-  int get hashCode =>
-      id.hashCode ^ type.hashCode ^ content.hashCode ^ timestamp.hashCode;
-}
-
-/// Model đại diện cho một gợi ý nhanh (QuickAction)
-class QuickAction {
-  /// ID duy nhất
-  final String id;
-
-  /// Tiêu đề action
-  final String title;
-
-  /// Mô tả ngắn
-  final String description;
-
-  /// Icon emoji
-  final String emoji;
-
-  /// Tin nhắn được gửi khi nhấn
-  final String messageText;
-
-  /// Loại action
-  final QuickActionType type;
-
-  QuickAction({
-    String? id,
-    required this.title,
-    required this.description,
-    required this.emoji,
-    required this.messageText,
-    this.type = QuickActionType.general,
-  }) : id = id ?? const Uuid().v4();
-
-  /// Tạo bản sao với các thuộc tính thay đổi
-  QuickAction copyWith({
-    String? id,
-    String? title,
-    String? description,
-    String? emoji,
-    String? messageText,
-    QuickActionType? type,
-  }) {
-    return QuickAction(
-      id: id ?? this.id,
-      title: title ?? this.title,
-      description: description ?? this.description,
-      emoji: emoji ?? this.emoji,
-      messageText: messageText ?? this.messageText,
       type: type ?? this.type,
+      timestamp: timestamp,
+      isLoading: isLoading ?? this.isLoading,
+      metadata: metadata ?? this.metadata,
     );
   }
 
-  /// Chuyển đổi sang JSON
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'title': title,
-      'description': description,
-      'emoji': emoji,
-      'messageText': messageText,
-      'type': type.value,
-    };
-  }
-
-  /// Tạo từ JSON
-  factory QuickAction.fromJson(Map<String, dynamic> json) {
-    return QuickAction(
-      id: json['id'] as String,
-      title: json['title'] as String,
-      description: json['description'] as String,
-      emoji: json['emoji'] as String,
-      messageText: json['messageText'] as String,
-      type: QuickActionType.values.firstWhere(
-        (e) => e.value == json['type'],
-        orElse: () => QuickActionType.general,
-      ),
-    );
-  }
-
-  @override
-  String toString() => 'QuickAction(id: $id, title: $title, emoji: $emoji)';
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is QuickAction &&
-          runtimeType == other.runtimeType &&
-          id == other.id &&
-          title == other.title &&
-          emoji == other.emoji;
-
-  @override
-  int get hashCode => id.hashCode ^ title.hashCode ^ emoji.hashCode;
+  bool get isUser => role == MessageRole.user;
+  bool get isAssistant => role == MessageRole.assistant;
 }
 
-/// Enum loại quick action
-enum QuickActionType {
-  general('general'),
-  analysis('analysis'),
-  advice('advice'),
-  goal('goal');
+class QuickAction {
+  final String label;
+  final String emoji;
+  final String prompt;
+  final Color color;
 
-  final String value;
-  const QuickActionType(this.value);
+  const QuickAction({
+    required this.label,
+    required this.emoji,
+    required this.prompt,
+    required this.color,
+  });
+
+  static const List<QuickAction> defaults = [
+    QuickAction(
+      label: 'Phân tích chi tiêu',
+      emoji: '📊',
+      prompt: 'Phân tích chi tiết chi tiêu của tôi tháng này. Tôi chi nhiều nhất cho mục nào? Có gì bất thường không?',
+      color: Color(0xFF6C5CE7),
+    ),
+    QuickAction(
+      label: 'Gợi ý tiết kiệm',
+      emoji: '💡',
+      prompt: 'Dựa trên chi tiêu của tôi, hãy đưa ra 5 gợi ý tiết kiệm cụ thể và thực tế nhất.',
+      color: Color(0xFF00B894),
+    ),
+    QuickAction(
+      label: 'Đánh giá tài chính',
+      emoji: '🏆',
+      prompt: 'Đánh giá tình hình tài chính tổng thể của tôi tháng này. Tỷ lệ tiết kiệm, mức chi tiêu có hợp lý không?',
+      color: Color(0xFFFDAA5D),
+    ),
+    QuickAction(
+      label: 'Cảnh báo chi tiêu',
+      emoji: '⚠️',
+      prompt: 'Kiểm tra xem tôi có đang chi tiêu vượt ngân sách không? Những danh mục nào cần cắt giảm?',
+      color: Color(0xFFE17055),
+    ),
+    QuickAction(
+      label: 'So sánh thu chi',
+      emoji: '⚖️',
+      prompt: 'So sánh thu nhập và chi tiêu của tôi tháng này. Tôi đang thâm hụt hay dư dả? Cho tôi lời khuyên.',
+      color: Color(0xFF0984E3),
+    ),
+    QuickAction(
+      label: 'Kế hoạch tháng sau',
+      emoji: '📅',
+      prompt: 'Dựa trên dữ liệu tháng này, lập kế hoạch chi tiêu cho tháng sau giúp tôi. Nên phân bổ ngân sách như thế nào?',
+      color: Color(0xFFA29BFE),
+    ),
+    // === DỰ ĐOÁN TÀI CHÍNH ===
+    QuickAction(
+      label: 'Dự đoán cuối tháng',
+      emoji: '🔮',
+      prompt: 'Dự đoán chi tiêu và thu nhập cuối tháng này dựa trên tốc độ hiện tại. Tôi có vượt ngân sách không?',
+      color: Color(0xFF6C5CE7),
+    ),
+    QuickAction(
+      label: 'Xu hướng tài chính',
+      emoji: '📈',
+      prompt: 'Dự báo xu hướng tài chính 3-6-12 tháng tới. Tôi sẽ tích lũy được bao nhiêu? Nếu gửi tiết kiệm thì lãi bao nhiêu?',
+      color: Color(0xFF00CEC9),
+    ),
+    QuickAction(
+      label: 'Tư vấn đầu tư',
+      emoji: '💹',
+      prompt: 'So sánh các kênh đầu tư cho tôi: gửi tiết kiệm, chứng khoán, vàng, bất động sản. Nên phân bổ thế nào?',
+      color: Color(0xFFE17055),
+    ),
+    QuickAction(
+      label: 'Mục tiêu tiết kiệm',
+      emoji: '🎯',
+      prompt: 'Với mức tiết kiệm hiện tại, bao lâu tôi đạt được mục tiêu tiết kiệm mua xe, laptop, du lịch, nhà?',
+      color: Color(0xFF00B894),
+    ),
+    QuickAction(
+      label: 'Đánh giá rủi ro',
+      emoji: '🛡️',
+      prompt: 'Đánh giá rủi ro tài chính của tôi. Tôi có đang an toàn không? Cần cải thiện gì?',
+      color: Color(0xFFFF7675),
+    ),
+    QuickAction(
+      label: 'Kịch bản tài chính',
+      emoji: '🎭',
+      prompt: 'Phân tích 3 kịch bản tài chính: lạc quan, trung bình, bi quan. Nếu thu tăng/giảm 10% thì sao?',
+      color: Color(0xFF0984E3),
+    ),
+    QuickAction(
+      label: 'Tự do tài chính',
+      emoji: '🏖️',
+      prompt: 'Với tỷ lệ tiết kiệm hiện tại, bao giờ tôi đạt tự do tài chính (FIRE)? Cần bao nhiêu tiền để nghỉ hưu sớm?',
+      color: Color(0xFFFDAA5D),
+    ),
+    QuickAction(
+      label: 'Ảnh hưởng lạm phát',
+      emoji: '📊',
+      prompt: 'Lạm phát sẽ ảnh hưởng thế nào đến chi tiêu của tôi trong 1-3-5-10 năm tới? Cách bảo vệ?',
+      color: Color(0xFFA29BFE),
+    ),
+    QuickAction(
+      label: 'Dòng tiền',
+      emoji: '💧',
+      prompt: 'Dự báo dòng tiền 4 tuần tới và 3 tháng tới. Tôi có đủ tiền trang trải không?',
+      color: Color(0xFF55A3E7),
+    ),
+  ];
 }
-
-/// Các quick actions mặc định
-final defaultQuickActions = [
-  QuickAction(
-    title: 'Phân tích chi tiêu',
-    description: 'Xem chi tiết chi tiêu của tôi',
-    emoji: '📊',
-    messageText: 'Hãy phân tích chi tiêu của tôi trong tháng này',
-    type: QuickActionType.analysis,
-  ),
-  QuickAction(
-    title: 'Lời khuyên tiết kiệm',
-    description: 'Nhận gợi ý tiết kiệm',
-    emoji: '💰',
-    messageText: 'Bạn có thể cho tôi lời khuyên để tiết kiệm tiền?',
-    type: QuickActionType.advice,
-  ),
-  QuickAction(
-    title: 'Đặt mục tiêu',
-    description: 'Lập kế hoạch tài chính',
-    emoji: '🎯',
-    messageText: 'Tôi muốn đặt mục tiêu tiết kiệm, bạn có thể giúp tôi không?',
-    type: QuickActionType.goal,
-  ),
-  QuickAction(
-    title: 'So sánh với tháng trước',
-    description: 'Xem xu hướng chi tiêu',
-    emoji: '📈',
-    messageText: 'Hãy so sánh chi tiêu của tôi so với tháng trước',
-    type: QuickActionType.analysis,
-  ),
-];

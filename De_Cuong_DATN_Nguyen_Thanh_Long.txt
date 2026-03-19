@@ -1,0 +1,61 @@
+
+TRU?NG Ð?I H?C THU? L?I 
+KHOA CÔNG NGH? THÔNG TIN
+
+B?N TÓM T?T Ð? CUONG Ð? ÁN T?T NGHI?P
+Tên d? tài: Xây d?ng h? th?ng qu?n lý giao nh?n hàng cho công ty v?n chuy?n
+
+
+Sinh viên th?c hi?n:	Nguy?n Thành Long
+L?p:	63HTTT1
+Mã sinh viên: 2151160504
+S? di?n tho?i: 0869940893
+Email:	 2151160504@e.tlu.edu.vn
+Giáo viên hu?ng d?n: TS. Ð? Oanh Cu?ng                      
+ Email: cuongdo@tlu.edu.vn
+			   
+
+
+
+
+
+
+
+
+TÓM T?T Ð? TÀI
+Trong th?i d?i thuong m?i di?n t? phát tri?n nhanh chóng, các công ty v?n chuy?n dóng vai trò r?t quan tr?ng trong vi?c dua hàng hóa t? ngu?i bán d?n ngu?i mua. Tuy nhiên, nhi?u công ty v?n chuy?n nh? hi?n nay v?n còn qu?n lý don hàng, phân công và theo dõi quá trình giao hàng theo cách th? công, d?n d?n tình tr?ng thi?u d?ng b?, d? sai sót và khó ki?m soát.
+Ð? tài "Xây d?ng h? th?ng qu?n lý giao nh?n hàng cho công ty v?n chuy?n" du?c th?c hi?n nh?m xây d?ng m?t h? th?ng web h? tr? công ty qu?n lý toàn b? quy trình ti?p nh?n don, phân công nhân viên, c?p nh?t tr?ng thái giao hàng và th?ng kê báo cáo. H? th?ng giúp gi?m b?t công vi?c th? công, tang hi?u qu? làm vi?c và d?m b?o thông tin du?c luu tr? t?p trung, d? truy xu?t.
+
+
+I. CÁC M?C TIÊU CHÍNH
+
+1. Xây d?ng h? th?ng web don gi?n, d? s? d?ng d? qu?n lý các ho?t d?ng giao nh?n hàng c?a công ty.
+2. Ti?p nh?n và luu tr? thông tin don hàng t? khách hàng.
+3. Qu?n lý thông tin khách hàng, nhân viên giao hàng và các don v?n chuy?n.
+4. H? tr? phân công don hàng cho nhân viên phù h?p.
+5. Theo dõi và c?p nh?t tr?ng thái c?a don hàng trong su?t quá trình giao nh?n.
+6. Th?ng kê, báo cáo s? li?u theo tr?ng thái, th?i gian, nhân viên nh?m h? tr? vi?c qu?n lý và ra quy?t d?nh.
+* Ph?m vi và gi?i h?n
+- Ph?m vi:
+Ð? tài t?p trung xây d?ng h? th?ng ph?c v? cho m?t công ty v?n chuy?n quy mô nh?, ho?t d?ng n?i thành ho?c ngo?i thành. H? th?ng h? tr? qu?n lý các thông tin liên quan d?n khách hàng, don hàng, nhân viên, quy trình phân công và tr?ng thái giao hàng.
+- Gi?i h?n:
+ H? th?ng không tích h?p các c?ng thanh toán online
+
+II. N?I DUNG CHÍNH
+1. Tìm hi?u quy trình nghi?p v? giao nh?n hàng th?c t?.
+2. Phân tích yêu c?u h? th?ng, xác d?nh tác nhân và các ch?c nang c?n có.
+3. Thi?t k? so d? Use Case, ERD và các so d? b? tr? khác.
+4. Thi?t k? giao di?n ngu?i dùng và co s? d? li?u.
+5. L?p trình các ch?c nang chính c?a h? th?ng: qu?n lý don hàng, khách hàng, phân công nhân viên, c?p nh?t tr?ng thái, báo cáo.
+6. Hoàn thi?n báo cáo và chu?n b? cho bu?i b?o v?.
+
+III. K?T QU? D? KI?N
+- Báo cáo và web s?n ph?m
+
+
+IV. K? HO?CH TH?C HI?N
+
+Th?i gianN?i dung công vi?cTu?n 1Kh?o sát, xác d?nh yêu c?uTu?n 2-3Phân tích h? th?ng (Use case, ERD)Tu?n 4-5-6Thi?t k? giao di?n & CSDLTu?n 7-8L?p trình các ch?c nang chínhTu?n 9-10Hoàn thi?n ch?c nang nâng cao & vi?t báo cáoTu?n 11-12Làm slide & Chu?n b? b?o v?
+
+TÀI LI?U THAM KH?O <N?u có>
+

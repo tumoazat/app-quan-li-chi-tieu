@@ -1,94 +1,78 @@
-/// File name: currency_formatter.dart
-/// Author: Nguyễn Văn An
-/// Created: 2026-03-20
-/// Description: Utilities for formatting currency and numbers
-///
-/// Responsibilities:
-/// - Format numbers as VND currency
-/// - Format dates
-/// - Format time
-
 import 'package:intl/intl.dart';
+import '../constants/app_constants.dart';
 
 class CurrencyFormatter {
-  /// Format số tiền thành VNĐ (1.500.000đ)
-  static String format(double value) {
+  // Format VND currency with Vietnamese style (dot separator for thousands)
+  static String formatVND(double amount, {bool showSymbol = true}) {
     final formatter = NumberFormat('#,##0', 'vi_VN');
-    return '${formatter.format(value.abs())}đ';
-  }
-
-  /// Format ngắn gọn (1.5tr, 500k)
-  static String formatCompact(double value) {
-    final absValue = value.abs();
-
-    if (absValue >= 1e6) {
-      return '${(absValue / 1e6).toStringAsFixed(1)}tr';
-    } else if (absValue >= 1e3) {
-      return '${(absValue / 1e3).toStringAsFixed(0)}k';
+    final formatted = formatter.format(amount.abs());
+    
+    if (showSymbol) {
+      return '${AppConstants.currencySymbol}$formatted';
     }
-    return absValue.toStringAsFixed(0);
+    return formatted;
   }
 
-  /// Format với dấu +/- (Thu nhập: +1.500.000đ, Chi tiêu: -500.000đ)
-  static String formatWithSign(double value, {bool showCurrency = true}) {
-    final formatted = format(value);
-    final sign = value >= 0 ? '+' : '-';
-    return '$sign${formatted.replaceFirst(RegExp(r'^[+-]'), '')}';
+  // Format with +/- prefix for income/expense
+  static String formatWithSign(double amount, {bool isIncome = false}) {
+    final prefix = isIncome ? '+' : '-';
+    final formatted = formatVND(amount.abs());
+    return '$prefix$formatted';
   }
 
-  /// Format ngày (20/03/2026)
-  static String formatDate(DateTime date) {
-    final formatter = DateFormat('dd/MM/yyyy', 'vi_VN');
-    return formatter.format(date);
+  // Format for expense (negative, red)
+  static String formatExpense(double amount) {
+    return formatWithSign(amount, isIncome: false);
   }
 
-  /// Format ngày chi tiết (Thứ ba, 20 tháng 3 năm 2026)
-  static String formatDateFull(DateTime date) {
-    final formatter = DateFormat('EEEE, d MMMM yyyy', 'vi_VN');
-    return formatter.format(date);
+  // Format for income (positive, green)
+  static String formatIncome(double amount) {
+    return formatWithSign(amount, isIncome: true);
   }
 
-  /// Format tháng (Tháng 3, 2026)
-  static String formatMonth(DateTime date) {
-    final formatter = DateFormat('MMMM yyyy', 'vi_VN');
-    return formatter.format(date);
-  }
-
-  /// Format giờ (14:30)
-  static String formatTime(DateTime date) {
-    final formatter = DateFormat('HH:mm', 'vi_VN');
-    return formatter.format(date);
-  }
-
-  /// Format ngày giờ (20/03/2026 14:30)
-  static String formatDateTime(DateTime date) {
-    return '${formatDate(date)} ${formatTime(date)}';
-  }
-
-  /// Tính số ngày trước đó humanize (2 ngày trước, Hôm qua)
-  static String formatRelativeDate(DateTime date) {
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final yesterday = today.subtract(const Duration(days: 1));
-    final dateOnly = DateTime(date.year, date.month, date.day);
-
-    if (dateOnly == today) {
-      return 'Hôm nay';
-    } else if (dateOnly == yesterday) {
-      return 'Hôm qua';
+  // Compact format for large numbers
+  static String formatCompact(double amount) {
+    if (amount >= 1000000000) {
+      // Billions
+      return '${AppConstants.currencySymbol}${(amount / 1000000000).toStringAsFixed(1)}B';
+    } else if (amount >= 1000000) {
+      // Millions
+      return '${AppConstants.currencySymbol}${(amount / 1000000).toStringAsFixed(1)}M';
+    } else if (amount >= 1000) {
+      // Thousands
+      return '${AppConstants.currencySymbol}${(amount / 1000).toStringAsFixed(1)}K';
     }
+    return formatVND(amount);
+  }
 
-    final difference = today.difference(dateOnly).inDays;
-    if (difference < 7) {
-      return '$difference ngày trước';
-    } else if (difference < 30) {
-      final weeks = (difference / 7).floor();
-      return '$weeks tuần trước';
-    } else if (difference < 365) {
-      final months = (difference / 30).floor();
-      return '$months tháng trước';
-    } else {
-      return formatDate(date);
+  // Parse currency string to double
+  static double parse(String value) {
+    // Remove currency symbol and spaces
+    String cleaned = value.replaceAll(AppConstants.currencySymbol, '');
+    cleaned = cleaned.replaceAll(' ', '');
+    // Replace dots with empty string (thousand separators in Vietnamese)
+    cleaned = cleaned.replaceAll('.', '');
+    // Replace comma with dot (decimal separator)
+    cleaned = cleaned.replaceAll(',', '.');
+    
+    try {
+      return double.parse(cleaned);
+    } catch (e) {
+      return 0.0;
     }
+  }
+
+  // Format input for display (while user is typing)
+  static String formatInput(String value) {
+    if (value.isEmpty) return '0';
+    
+    // Remove non-digit characters except dot
+    String cleaned = value.replaceAll(RegExp(r'[^\d]'), '');
+    
+    if (cleaned.isEmpty) return '0';
+    
+    // Parse to double and format
+    final amount = double.tryParse(cleaned) ?? 0;
+    return formatVND(amount);
   }
 }

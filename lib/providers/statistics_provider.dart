@@ -1,327 +1,197 @@
-/// File name: statistics_provider.dart
-/// Author: Nguyễn Văn An
-/// Created: 2026-03-20
-/// Description: Riverpod providers for statistics calculations
-///
-/// Responsibilities:
-/// - Calculate statistics and trends
-/// - Monthly/yearly aggregations
-/// - Category breakdowns
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:riverpod_annotation/riverpod_annotation.dart';
-import '../data/models/transaction_model.dart';
-import '../providers/transaction_provider.dart';
+import 'transaction_provider.dart';
+import '../../core/constants/category_data.dart';
 
-part 'statistics_provider.g.dart';
-
-// ============ STATISTICS STATE ============
-
-/// StatisticsData - Lưu dữ liệu thống kê
-class StatisticsData {
+// Monthly statistics model
+class MonthlyStats {
   final double totalIncome;
   final double totalExpense;
   final double balance;
-  final Map<String, double> categoryExpenses;
-  final Map<String, double> monthlyExpense; // {month -> expense}
-  final double averageDailyExpense;
-  final double averageMonthlyExpense;
-  final List<String> topCategories; // Top 5 categories by expense
+  final Map<String, double> categoryBreakdown;
+  final Map<String, int> categoryCount;
+  final int transactionCount;
 
-  StatisticsData({
+  MonthlyStats({
     required this.totalIncome,
     required this.totalExpense,
     required this.balance,
-    required this.categoryExpenses,
-    required this.monthlyExpense,
-    required this.averageDailyExpense,
-    required this.averageMonthlyExpense,
-    required this.topCategories,
+    required this.categoryBreakdown,
+    required this.categoryCount,
+    required this.transactionCount,
   });
 
-  /// Copy with
-  StatisticsData copyWith({
-    double? totalIncome,
-    double? totalExpense,
-    double? balance,
-    Map<String, double>? categoryExpenses,
-    Map<String, double>? monthlyExpense,
-    double? averageDailyExpense,
-    double? averageMonthlyExpense,
-    List<String>? topCategories,
-  }) {
-    return StatisticsData(
-      totalIncome: totalIncome ?? this.totalIncome,
-      totalExpense: totalExpense ?? this.totalExpense,
-      balance: balance ?? this.balance,
-      categoryExpenses: categoryExpenses ?? this.categoryExpenses,
-      monthlyExpense: monthlyExpense ?? this.monthlyExpense,
-      averageDailyExpense: averageDailyExpense ?? this.averageDailyExpense,
-      averageMonthlyExpense:
-          averageMonthlyExpense ?? this.averageMonthlyExpense,
-      topCategories: topCategories ?? this.topCategories,
-    );
+  double get savingRate {
+    if (totalIncome == 0) return 0;
+    return ((totalIncome - totalExpense) / totalIncome) * 100;
   }
 }
 
-// ============ HELPER FUNCTIONS ============
+// Chart data point
+class ChartDataPoint {
+  final String label;
+  final double value;
+  final String categoryId;
 
-/// Tính tổng category expenses từ transactions
-Map<String, double> _calculateCategoryExpenses(List<Transaction> transactions) {
-  final expenses = <String, double>{};
-
-  for (final tx in transactions) {
-    if (tx.type == TransactionType.expense) {
-      expenses[tx.category] =
-          (expenses[tx.category] ?? 0) + tx.amount.abs();
-    }
-  }
-
-  return expenses;
-}
-
-/// Tính monthly expenses
-Map<String, double> _calculateMonthlyExpense(List<Transaction> transactions) {
-  final monthly = <String, double>{};
-
-  for (final tx in transactions) {
-    if (tx.type == TransactionType.expense) {
-      final key = '${tx.date.year}-${tx.date.month.toString().padLeft(2, '0')}';
-      monthly[key] = (monthly[key] ?? 0) + tx.amount.abs();
-    }
-  }
-
-  return monthly;
-}
-
-/// Tính average daily expense
-double _calculateAverageDailyExpense(List<Transaction> transactions) {
-  if (transactions.isEmpty) return 0;
-
-  final expenses =
-      transactions.where((tx) => tx.type == TransactionType.expense).toList();
-
-  if (expenses.isEmpty) return 0;
-
-  // Tính số ngày từ transaction cũ nhất đến hôm nay
-  final oldestDate = expenses.map((tx) => tx.date).reduce((a, b) {
-    return a.isBefore(b) ? a : b;
+  ChartDataPoint({
+    required this.label,
+    required this.value,
+    required this.categoryId,
   });
-
-  final daysDifference = DateTime.now().difference(oldestDate).inDays + 1;
-  final totalExpense = expenses.fold(0.0, (sum, tx) => sum + tx.amount.abs());
-
-  return totalExpense / daysDifference;
 }
 
-/// Tính top categories
-List<String> _calculateTopCategories(Map<String, double> categoryExpenses) {
-  final sorted = categoryExpenses.entries.toList()
-    ..sort((a, b) => b.value.compareTo(a.value));
+// Monthly stats provider
+// Key format: "year-month" e.g. "2026-2"
+final monthlyStatsProvider = Provider.autoDispose
+    .family<MonthlyStats, String>((ref, monthKey) {
+  final transactionsAsync = ref.watch(
+    transactionsStreamProvider(monthKey),
+  );
 
-  return sorted.take(5).map((e) => e.key).toList();
-}
+  return transactionsAsync.when(
+    data: (transactions) {
+      double totalIncome = 0;
+      double totalExpense = 0;
+      final Map<String, double> categoryBreakdown = {};
+      final Map<String, int> categoryCount = {};
 
-// ============ PROVIDERS ============
+      for (var transaction in transactions) {
+        if (transaction.isIncome) {
+          totalIncome += transaction.amount;
+        } else {
+          totalExpense += transaction.amount;
+        }
 
-/// Overall statistics provider
-@riverpod
-Future<StatisticsData> statisticsProvider(Ref ref) async {
-  final transactions = ref.watch(transactionsStreamProvider);
+        // Category breakdown (only for expenses)
+        if (transaction.isExpense) {
+          categoryBreakdown[transaction.categoryId] =
+              (categoryBreakdown[transaction.categoryId] ?? 0) + 
+              transaction.amount;
+          categoryCount[transaction.categoryId] =
+              (categoryCount[transaction.categoryId] ?? 0) + 1;
+        }
+      }
 
-  return transactions.when(
-    data: (txs) {
-      final totalIncome = txs
-          .where((tx) => tx.type == TransactionType.income)
-          .fold(0.0, (sum, tx) => sum + tx.amount);
-
-      final totalExpense = txs
-          .where((tx) => tx.type == TransactionType.expense)
-          .fold(0.0, (sum, tx) => sum + tx.amount.abs());
-
-      final categoryExpenses = _calculateCategoryExpenses(txs);
-      final monthlyExpense = _calculateMonthlyExpense(txs);
-      final averageDailyExpense = _calculateAverageDailyExpense(txs);
-
-      final averageMonthlyExpense = monthlyExpense.isEmpty
-          ? 0
-          : monthlyExpense.values.reduce((a, b) => a + b) / monthlyExpense.length;
-
-      final topCategories = _calculateTopCategories(categoryExpenses);
-
-      return StatisticsData(
+      return MonthlyStats(
         totalIncome: totalIncome,
         totalExpense: totalExpense,
         balance: totalIncome - totalExpense,
-        categoryExpenses: categoryExpenses,
-        monthlyExpense: monthlyExpense,
-        averageDailyExpense: averageDailyExpense,
-        averageMonthlyExpense: averageMonthlyExpense,
-        topCategories: topCategories,
+        categoryBreakdown: categoryBreakdown,
+        categoryCount: categoryCount,
+        transactionCount: transactions.length,
       );
     },
-    loading: () => StatisticsData(
+    loading: () => MonthlyStats(
       totalIncome: 0,
       totalExpense: 0,
       balance: 0,
-      categoryExpenses: {},
-      monthlyExpense: {},
-      averageDailyExpense: 0,
-      averageMonthlyExpense: 0,
-      topCategories: [],
+      categoryBreakdown: {},
+      categoryCount: {},
+      transactionCount: 0,
     ),
-    error: (_, __) => StatisticsData(
+    error: (error, stack) => MonthlyStats(
       totalIncome: 0,
       totalExpense: 0,
       balance: 0,
-      categoryExpenses: {},
-      monthlyExpense: {},
-      averageDailyExpense: 0,
-      averageMonthlyExpense: 0,
-      topCategories: [],
+      categoryBreakdown: {},
+      categoryCount: {},
+      transactionCount: 0,
     ),
   );
-}
+});
 
-/// Monthly comparison data
-/// Returns: {month -> (income, expense)}
-@riverpod
-Future<Map<String, (double, double)>> monthlyComparisonProvider(Ref ref) async {
-  final transactions = ref.watch(transactionsStreamProvider);
+// Pie chart data provider
+final pieChartDataProvider = Provider.autoDispose
+    .family<List<ChartDataPoint>, String>((ref, monthKey) {
+  final stats = ref.watch(monthlyStatsProvider(monthKey));
+  final List<ChartDataPoint> dataPoints = [];
 
-  return transactions.when(
-    data: (txs) {
-      final monthly = <String, (double, double)>{};
+  stats.categoryBreakdown.forEach((categoryId, amount) {
+    final category = CategoryModel.findById(categoryId);
+    dataPoints.add(ChartDataPoint(
+      label: category?.name ?? 'Khác',
+      value: amount,
+      categoryId: categoryId,
+    ));
+  });
 
-      for (final tx in txs) {
-        final key = '${tx.date.year}-${tx.date.month.toString().padLeft(2, '0')}';
+  // Sort by value descending
+  dataPoints.sort((a, b) => b.value.compareTo(a.value));
 
-        if (!monthly.containsKey(key)) {
-          monthly[key] = (0, 0);
-        }
+  return dataPoints;
+});
 
-        if (tx.type == TransactionType.income) {
-          final (income, expense) = monthly[key]!;
-          monthly[key] = (income + tx.amount, expense);
-        } else {
-          final (income, expense) = monthly[key]!;
-          monthly[key] = (income, expense + tx.amount.abs());
-        }
-      }
-
-      return monthly;
-    },
-    loading: () => {},
-    error: (_, __) => {},
+// Bar chart data provider (daily spending for current month)
+final barChartDataProvider = Provider.autoDispose<List<ChartDataPoint>>((ref) {
+  final now = DateTime.now();
+  final transactionsAsync = ref.watch(
+    transactionsStreamProvider('${now.year}-${now.month}'),
   );
-}
 
-/// Year over year comparison
-@riverpod
-Future<Map<int, double>> yearComparisonProvider(Ref ref) async {
-  final transactions = ref.watch(transactionsStreamProvider);
+  return transactionsAsync.when(
+    data: (transactions) {
+      // Group expenses by day
+      final Map<int, double> dailyExpenses = {};
 
-  return transactions.when(
-    data: (txs) {
-      final yearlyExpense = <int, double>{};
-
-      for (final tx in txs) {
-        if (tx.type == TransactionType.expense) {
-          yearlyExpense[tx.date.year] =
-              (yearlyExpense[tx.date.year] ?? 0) + tx.amount.abs();
+      for (var transaction in transactions) {
+        if (transaction.isExpense) {
+          final day = transaction.date.day;
+          dailyExpenses[day] = (dailyExpenses[day] ?? 0) + transaction.amount;
         }
       }
 
-      return yearlyExpense;
-    },
-    loading: () => {},
-    error: (_, __) => {},
-  );
-}
+      // Convert to chart data points
+      final List<ChartDataPoint> dataPoints = [];
+      dailyExpenses.forEach((day, amount) {
+        dataPoints.add(ChartDataPoint(
+          label: day.toString(),
+          value: amount,
+          categoryId: '',
+        ));
+      });
 
-/// Category percentage data
-/// Returns: {category -> percentage}
-@riverpod
-Future<Map<String, double>> categoryPercentageProvider(Ref ref) async {
-  final stats = ref.watch(statisticsProvider);
+      // Sort by day
+      dataPoints.sort((a, b) => 
+          int.parse(a.label).compareTo(int.parse(b.label)));
 
-  return stats.when(
-    data: (data) {
-      if (data.totalExpense == 0) return {};
-
-      final percentages = <String, double>{};
-
-      for (final entry in data.categoryExpenses.entries) {
-        percentages[entry.key] = (entry.value / data.totalExpense) * 100;
-      }
-
-      return percentages;
-    },
-    loading: () => {},
-    error: (_, __) => {},
-  );
-}
-
-/// Recent transactions (last 10)
-@riverpod
-Future<List<Transaction>> recentTransactionsProvider(Ref ref) async {
-  final transactions = ref.watch(transactionsStreamProvider);
-
-  return transactions.when(
-    data: (txs) => txs.take(10).toList(),
-    loading: () => [],
-    error: (_, __) => [],
-  );
-}
-
-/// Spending trend (last 30 days)
-@riverpod
-Future<List<double>> spendingTrendProvider(Ref ref) async {
-  final transactions = ref.watch(transactionsStreamProvider);
-
-  return transactions.when(
-    data: (txs) {
-      final days = <DateTime, double>{};
-      final now = DateTime.now();
-
-      // Initialize last 30 days
-      for (int i = 0; i < 30; i++) {
-        final day = now.subtract(Duration(days: i));
-        final dateOnly = DateTime(day.year, day.month, day.day);
-        days[dateOnly] = 0;
-      }
-
-      // Calculate expenses per day
-      for (final tx in txs) {
-        if (tx.type == TransactionType.expense) {
-          final dateOnly =
-              DateTime(tx.date.year, tx.date.month, tx.date.day);
-          if (days.containsKey(dateOnly)) {
-            days[dateOnly] = (days[dateOnly] ?? 0) + tx.amount.abs();
-          }
-        }
-      }
-
-      // Return sorted by date (oldest first)
-      final sorted = days.entries.toList()
-        ..sort((a, b) => a.key.compareTo(b.key));
-
-      return sorted.map((e) => e.value).toList();
+      return dataPoints;
     },
     loading: () => [],
     error: (_, __) => [],
   );
-}
+});
 
-/// Budget vs Actual (cần budget data từ Person 1)
-/// For now, returning expense only
-@riverpod
-Future<double> budgetProgressProvider(Ref ref) async {
-  final stats = ref.watch(statisticsProvider);
+// Top spending category provider
+final topSpendingCategoryProvider = Provider.autoDispose
+    .family<String?, String>((ref, monthKey) {
+  final stats = ref.watch(monthlyStatsProvider(monthKey));
 
-  return stats.when(
-    data: (data) => data.totalExpense,
-    loading: () => 0,
-    error: (_, __) => 0,
-  );
-}
+  if (stats.categoryBreakdown.isEmpty) return null;
+
+  // Find category with highest spending
+  String topCategory = '';
+  double maxAmount = 0;
+
+  stats.categoryBreakdown.forEach((categoryId, amount) {
+    if (amount > maxAmount) {
+      maxAmount = amount;
+      topCategory = categoryId;
+    }
+  });
+
+  return topCategory;
+});
+
+// Category spending percentage provider
+final categorySpendingPercentageProvider = Provider.autoDispose
+    .family<Map<String, double>, String>((ref, monthKey) {
+  final stats = ref.watch(monthlyStatsProvider(monthKey));
+  final Map<String, double> percentages = {};
+
+  if (stats.totalExpense == 0) return percentages;
+
+  stats.categoryBreakdown.forEach((categoryId, amount) {
+    percentages[categoryId] = (amount / stats.totalExpense) * 100;
+  });
+
+  return percentages;
+});

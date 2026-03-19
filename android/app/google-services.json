@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "525491805249",
+    "firebase_url": "https://quanlichitieu-4470e-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "quanlichitieu-4470e",
+    "storage_bucket": "quanlichitieu-4470e.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:525491805249:android:aa154964f23324d8be3ac0",
+        "android_client_info": {
+          "package_name": "com.example.appchitieu"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "525491805249-2tiattcput75n4bnpn87ijsinp5ejths.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.appchitieu",
+            "certificate_hash": "a9c59e98757effbcf66caca98cac47f8b2fec55b"
+          }
+        },
+        {
+          "client_id": "525491805249-popabd6hjgv8mse76vlh4rkra79vvira.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCsDAeaBBX4asjWn0GGjgNELC6ZsqSd3yM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "525491805249-popabd6hjgv8mse76vlh4rkra79vvira.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

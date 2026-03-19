@@ -1,123 +1,136 @@
-import 'dart:async';
-
-import 'package:flutter/foundation.dart';
-
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/models/chat_message.dart';
+import '../data/models/transaction_model.dart';
+import '../data/services/ai_chat_service.dart';
+import 'transaction_provider.dart';
+import 'user_provider.dart';
+import 'auth_provider.dart';
+import 'package:uuid/uuid.dart';
 
-class ChatProvider extends ChangeNotifier {
-  ChatProvider() {
-    _messages.add(
-      ChatMessage(
-        id: _nextId(),
-        sender: ChatSender.assistant,
-        text: 'Xin chao, minh la tro ly AI quan ly chi tieu. Ban can tu van gi hom nay?',
-        createdAt: DateTime.now(),
-      ),
+// AI Chat Service singleton provider
+final aiChatServiceProvider = Provider<AiChatService>((ref) {
+  return AiChatService();
+});
+
+// Chat messages state
+class ChatNotifier extends StateNotifier<List<ChatMessage>> {
+  final Ref _ref;
+  final AiChatService _chatService;
+
+  ChatNotifier(this._ref, this._chatService) : super([]) {
+    // Add welcome message
+    _addWelcomeMessage();
+  }
+
+  void _addWelcomeMessage() {
+    final welcome = ChatMessage(
+      id: const Uuid().v4(),
+      role: MessageRole.assistant,
+      content: 'Xin chào! 👋 Tôi là **AI Tài Chính** - trợ lý quản lý chi tiêu thông minh của bạn.\n\n'
+          'Tôi có thể giúp bạn:\n'
+          '• 📊 Phân tích chi tiêu chi tiết\n'
+          '• 💡 Gợi ý cách tiết kiệm\n'
+          '• ⚠️ Cảnh báo vượt ngân sách\n'
+          '• 📅 Lập kế hoạch tài chính\n'
+          '• 🏆 Đánh giá sức khỏe tài chính\n\n'
+          'Hãy chọn một gợi ý bên dưới hoặc hỏi tôi bất cứ điều gì về tài chính của bạn! 😊',
+      type: MessageType.text,
+    );
+    state = [welcome];
+  }
+
+  List<TransactionModel> _getCurrentTransactions() {
+    final now = DateTime.now();
+    final monthKey = '${now.year}-${now.month}';
+    final transactionsAsync = _ref.read(transactionsStreamProvider(monthKey));
+    return transactionsAsync.when(
+      data: (data) => data,
+      loading: () => <TransactionModel>[],
+      error: (_, __) => <TransactionModel>[],
     );
   }
 
-  final List<ChatMessage> _messages = <ChatMessage>[];
-  bool _isSending = false;
+  String _getFinancialContext() {
+    final transactions = _getCurrentTransactions();
+    final monthlyBudget = _ref.read(monthlyBudgetProvider);
+    final user = _ref.read(currentUserProvider);
 
-  final List<QuickPrompt> quickPrompts = const <QuickPrompt>[
-    QuickPrompt(
-      title: 'Toi nen tiet kiem the nao?',
-      prompt: 'Toi nen tiet kiem the nao voi muc thu nhap hien tai?',
-      emoji: '💰',
-    ),
-    QuickPrompt(
-      title: 'Thong ke chi tieu',
-      prompt: 'Hay thong ke chi tieu va nhung khoan nao dang tang nhanh.',
-      emoji: '📊',
-    ),
-    QuickPrompt(
-      title: 'Goi y cat giam',
-      prompt: 'Khoan chi nao minh co the cat giam trong thang nay?',
-      emoji: '✂️',
-    ),
-  ];
-
-  List<ChatMessage> get messages => List<ChatMessage>.unmodifiable(_messages);
-  bool get isSending => _isSending;
-
-  Future<void> sendMessage(String rawInput) async {
-    final String input = rawInput.trim();
-    if (input.isEmpty || _isSending) {
-      return;
-    }
-
-    _messages.add(
-      ChatMessage(
-        id: _nextId(),
-        sender: ChatSender.user,
-        text: input,
-        createdAt: DateTime.now(),
-      ),
+    return _chatService.buildFinancialContext(
+      transactions: transactions,
+      monthlyBudget: monthlyBudget,
+      userName: user?.displayName,
     );
-
-    _isSending = true;
-    _messages.add(
-      ChatMessage(
-        id: _nextId(),
-        sender: ChatSender.assistant,
-        text: '',
-        createdAt: DateTime.now(),
-        isTyping: true,
-      ),
-    );
-    notifyListeners();
-
-    await Future<void>.delayed(const Duration(milliseconds: 850));
-
-    _messages.removeLast();
-    _messages.add(
-      ChatMessage(
-        id: _nextId(),
-        sender: ChatSender.assistant,
-        text: _buildReply(input),
-        createdAt: DateTime.now(),
-      ),
-    );
-
-    _isSending = false;
-    notifyListeners();
   }
 
-  Future<void> sendQuickPrompt(QuickPrompt prompt) {
-    return sendMessage(prompt.prompt);
-  }
+  Future<void> sendMessage(String text) async {
+    if (text.trim().isEmpty) return;
 
-  void clearConversation() {
-    _messages
-      ..clear()
-      ..add(
-        ChatMessage(
-          id: _nextId(),
-          sender: ChatSender.assistant,
-          text: 'Da xoa lich su chat. Ban muon bat dau lai voi muc tieu nao?',
-          createdAt: DateTime.now(),
-        ),
+    // Add user message
+    final userMsg = ChatMessage(
+      id: const Uuid().v4(),
+      role: MessageRole.user,
+      content: text.trim(),
+    );
+    state = [...state, userMsg];
+
+    // Add loading placeholder
+    final loadingId = const Uuid().v4();
+    final loadingMsg = ChatMessage(
+      id: loadingId,
+      role: MessageRole.assistant,
+      content: '',
+      isLoading: true,
+    );
+    state = [...state, loadingMsg];
+
+    try {
+      // Get fresh financial context and data
+      final context = _getFinancialContext();
+      final transactions = _getCurrentTransactions();
+      final monthlyBudget = _ref.read(monthlyBudgetProvider);
+
+      // Get AI response (will auto-fallback to offline if API fails)
+      final response = await _chatService.sendMessage(
+        userMessage: text.trim(),
+        financialContext: context,
+        transactions: transactions,
+        monthlyBudget: monthlyBudget,
       );
-    notifyListeners();
+
+      // Replace loading message with actual response
+      state = state.map((msg) {
+        if (msg.id == loadingId) {
+          return msg.copyWith(
+            content: response,
+            isLoading: false,
+          );
+        }
+        return msg;
+      }).toList();
+    } catch (e) {
+      // Replace loading with error
+      state = state.map((msg) {
+        if (msg.id == loadingId) {
+          return msg.copyWith(
+            content: '⚠️ Có lỗi xảy ra. Hãy thử lại nhé!\n\n'
+                '💡 Gợi ý: hỏi "phân tích chi tiêu", "tiết kiệm", "ngân sách", "sức khỏe tài chính"',
+            isLoading: false,
+          );
+        }
+        return msg;
+      }).toList();
+    }
   }
 
-  String _buildReply(String input) {
-    final String normalized = input.toLowerCase();
-
-    if (normalized.contains('tiet kiem')) {
-      return 'Goi y nhanh: ap dung quy tac 50/30/20, tu dong chuyen 20% thu nhap vao quy tiet kiem ngay sau khi nhan luong, va dat muc tieu tiet kiem theo tuan de de bam sat.';
-    }
-
-    if (normalized.contains('thong ke') || normalized.contains('chi tieu')) {
-      return 'Ban nen theo doi 3 nhom chinh: an uong, di chuyen, giai tri. Neu 1 nhom vuot 10-15% so voi trung binh 4 tuan, hay dat canh bao va giam muc chi trong 2 tuan tiep theo.';
-    }
-
-    if (normalized.contains('cat giam') || normalized.contains('toi uu')) {
-      return 'Thu uu tien cat giam chi phi linh hoat (an ngoai, mua sam ngau hung). Dat ngan sach theo tuan cho tung nhom va dung ngay khi cham nguong 90%.';
-    }
-
-    return 'Minh da ghi nhan. De tu van chinh xac hon, ban co the chia se tong thu nhap thang, tong chi, va muc tieu tiet kiem cua ban?';
+  void clearChat() {
+    _chatService.clearHistory();
+    state = [];
+    _addWelcomeMessage();
   }
-
-  String _nextId() => DateTime.now().microsecondsSinceEpoch.toString();
 }
+
+final chatProvider =
+    StateNotifierProvider<ChatNotifier, List<ChatMessage>>((ref) {
+  final chatService = ref.watch(aiChatServiceProvider);
+  return ChatNotifier(ref, chatService);
+});
