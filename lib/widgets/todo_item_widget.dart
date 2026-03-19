@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 /// Model class đại diện cho một Task/Công việc
-/// 
+///
 /// Chứa tất cả thông tin cần thiết của một task:
 /// - id: ID duy nhất (dùng để xác định task)
 /// - title: Nội dung của task
@@ -10,12 +10,12 @@ import 'package:flutter/material.dart';
 /// - deadline: Thời hạn hoàn thành (tùy chọn, có thể null)
 /// - time: Giờ cụ thể để làm task (tùy chọn, có thể null)
 class Todo {
-  String id;                  // ID duy nhất của task
-  String title;               // Nội dung task
-  bool isCompleted;           // Trạng thái (hoàn thành/chưa hoàn thành)
-  DateTime createdAt;         // Ngày giờ tạo task
-  DateTime? deadline;         // Thời hạn (optional - có thể null)
-  TimeOfDay? time;            // Giờ cụ thể (optional - có thể null)
+  String id; // ID duy nhất của task
+  String title; // Nội dung task
+  bool isCompleted; // Trạng thái (hoàn thành/chưa hoàn thành)
+  DateTime createdAt; // Ngày giờ tạo task
+  DateTime? deadline; // Thời hạn (optional - có thể null)
+  TimeOfDay? time; // Giờ cụ thể (optional - có thể null)
 
   /// Constructor tạo mới một Todo
   /// [id] và [title] bắt buộc phải cung cấp
@@ -31,7 +31,7 @@ class Todo {
 }
 
 /// Widget hiển thị một item Todo (công việc) trong danh sách
-/// 
+///
 /// Đây là một StatefulWidget vì nó cần quản lý animation khi người dùng click
 /// Widget nhận vào:
 /// - [todo]: Đối tượng Todo cần hiển thị
@@ -39,10 +39,10 @@ class Todo {
 /// - [onEdit]: Callback khi người dùng bấm nút sửa
 /// - [onDelete]: Callback khi người dùng bấm nút xóa
 class TodoItemWidget extends StatefulWidget {
-  final Todo todo;              // Dữ liệu task cần hiển thị
-  final VoidCallback onToggle;  // Sự kiện: đánh dấu hoàn thành
-  final VoidCallback onEdit;    // Sự kiện: chỉnh sửa
-  final VoidCallback onDelete;  // Sự kiện: xóa
+  final Todo todo; // Dữ liệu task cần hiển thị
+  final VoidCallback onToggle; // Sự kiện: đánh dấu hoàn thành
+  final VoidCallback onEdit; // Sự kiện: chỉnh sửa
+  final VoidCallback onDelete; // Sự kiện: xóa
 
   const TodoItemWidget({
     super.key,
@@ -62,21 +62,21 @@ class _TodoItemWidgetState extends State<TodoItemWidget>
     with SingleTickerProviderStateMixin {
   // Animation controller: điều khiển hiệu ứng scale (phóng to/thu nhỏ)
   late AnimationController _animationController;
-  
+
   // Animation: thu nhỏ item khi bấm (1.0 → 0.98) rồi phóng to lại
   late Animation<double> _scaleAnimation;
 
   @override
   void initState() {
     super.initState();
-    
+
     // Khởi tạo animation controller
     // Duration: 300ms là thời gian animation
     _animationController = AnimationController(
       duration: const Duration(milliseconds: 300),
       vsync: this,
     );
-    
+
     // Tạo animation: thay đổi scale từ 1.0 → 0.98
     // Sử dụng EaseInOut curve để animation mượt hơn
     _scaleAnimation = Tween<double>(begin: 1.0, end: 0.98).animate(
@@ -92,7 +92,7 @@ class _TodoItemWidgetState extends State<TodoItemWidget>
   }
 
   /// Hàm build: xây dựng giao diện của todo item
-  /// 
+  ///
   /// Cấu trúc:
   /// - GestureDetector: Phát hiện khi người dùng bấm
   /// - ScaleTransition: Áp dụng animation scale
@@ -107,7 +107,7 @@ class _TodoItemWidgetState extends State<TodoItemWidget>
       onTapUp: (_) => _animationController.reverse(),
       // onTapCancel: Nếu bấm nhưng kéo ra ngoài → animation reverse
       onTapCancel: () => _animationController.reverse(),
-      
+
       // ScaleTransition: Áp dụng animation scale cho toàn bộ todo item
       child: ScaleTransition(
         scale: _scaleAnimation,
@@ -117,7 +117,7 @@ class _TodoItemWidgetState extends State<TodoItemWidget>
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(14),
           ),
-          shadowColor: Colors.grey.withOpacity(0.2),
+          shadowColor: Colors.grey.withValues(alpha: 0.2),
           child: Container(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(14),
@@ -274,14 +274,10 @@ class _TodoItemWidgetState extends State<TodoItemWidget>
         child: Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
+            color: color.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(8),
           ),
-          child: Icon(
-            icon,
-            color: color,
-            size: 20,
-          ),
+          child: Icon(icon, color: color, size: 20),
         ),
       ),
     );
@@ -322,11 +318,15 @@ class _TodoItemWidgetState extends State<TodoItemWidget>
 
   Color _getDeadlineColor() {
     if (widget.todo.deadline == null) return Colors.grey.shade600;
-    
+
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-    final deadlineDate = DateTime(widget.todo.deadline!.year, widget.todo.deadline!.month, widget.todo.deadline!.day);
-    
+    final deadlineDate = DateTime(
+      widget.todo.deadline!.year,
+      widget.todo.deadline!.month,
+      widget.todo.deadline!.day,
+    );
+
     if (deadlineDate.isBefore(today)) {
       return Colors.red.shade600; // Quá hạn
     } else if (deadlineDate == today) {

@@ -16,7 +16,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Task Manager',
       debugShowCheckedModeBanner: false,
-      
+
       // Cấu hình theme Material 3
       theme: ThemeData(
         useMaterial3: true,
@@ -25,13 +25,10 @@ class MyApp extends StatelessWidget {
           seedColor: const Color(0xFF5B4FFF),
           brightness: Brightness.light,
         ),
-        appBarTheme: const AppBarTheme(
-          elevation: 0,
-          centerTitle: false,
-        ),
+        appBarTheme: const AppBarTheme(elevation: 0, centerTitle: false),
         scaffoldBackgroundColor: const Color(0xFFF8F9FA),
       ),
-      
+
       // Trang home: TodoHomePage
       home: const TodoHomePage(),
     );
@@ -48,10 +45,10 @@ class TodoHomePage extends StatefulWidget {
 }
 
 /// Enum định nghĩa 3 loại lọc trạng thái
-enum FilterStatus { 
-  all,        // Hiển thị tất cả todo
-  pending,    // Hiển thị chỉ todo chưa hoàn thành
-  completed   // Hiển thị chỉ todo hoàn thành
+enum FilterStatus {
+  all, // Hiển thị tất cả todo
+  pending, // Hiển thị chỉ todo chưa hoàn thành
+  completed, // Hiển thị chỉ todo hoàn thành
 }
 
 /// State chính của ứng dụng
@@ -62,19 +59,21 @@ enum FilterStatus {
 /// - Lịch sử tìm kiếm (_searchHistory)
 class _TodoHomePageState extends State<TodoHomePage> {
   // ====== DANH SÁCH DỮ LIỆU ======
-  final List<Todo> _todos = [];               // Danh sách tất cả todo
-  
+  final List<Todo> _todos = []; // Danh sách tất cả todo
+
   // ====== LỌC VÀ TÌM KIẾM ======
   FilterStatus _filterStatus = FilterStatus.all; // Bộ lọc trạng thái mặc định
-  final TextEditingController _inputController = TextEditingController(); // TextInput cho thêm/sửa todo
-  final TextEditingController _searchController = TextEditingController(); // TextInput cho tìm kiếm
-  String _searchQuery = '';                   // Từ khóa tìm kiếm hiện tại
-  List<String> _searchHistory = [];           // Lưu 10 tìm kiếm gần nhất
-  bool _showSearchHistory = false;            // Có hiển thị lịch sử tìm kiếm hay không
-  
+  final TextEditingController _inputController =
+      TextEditingController(); // TextInput cho thêm/sửa todo
+  final TextEditingController _searchController =
+      TextEditingController(); // TextInput cho tìm kiếm
+  String _searchQuery = ''; // Từ khóa tìm kiếm hiện tại
+  final List<String> _searchHistory = []; // Lưu 10 tìm kiếm gần nhất
+  bool _showSearchHistory = false; // Có hiển thị lịch sử tìm kiếm hay không
+
   // ====== DEADLINE VÀ GIỜ ======
-  DateTime? _selectedDeadline;                // Thời hạn đã chọn (khi thêm/sửa)
-  TimeOfDay? _selectedTime;                   // Giờ đã chọn (khi thêm/sửa)
+  DateTime? _selectedDeadline; // Thời hạn đã chọn (khi thêm/sửa)
+  TimeOfDay? _selectedTime; // Giờ đã chọn (khi thêm/sửa)
 
   @override
   void dispose() {
@@ -85,17 +84,19 @@ class _TodoHomePageState extends State<TodoHomePage> {
   }
 
   /// Thêm tìm kiếm vào lịch sử
-  /// 
+  ///
   /// Quy tắc:
   /// - Nếu query đã tồn tại → xóa để thêm lại ở đầu (tránh trùng)
   /// - Giữ tối đa 10 tìm kiếm gần nhất
   /// - Xóa đi tìm kiếm cũ nhất nếu vượt quá 10
   void _addToSearchHistory(String query) {
     if (query.trim().isEmpty) return; // Bỏ qua nếu query rỗng
-    
+
     setState(() {
       // Xóa nếu đã tồn tại để tránh trùng lặp
-      _searchHistory.removeWhere((item) => item.toLowerCase() == query.toLowerCase());
+      _searchHistory.removeWhere(
+        (item) => item.toLowerCase() == query.toLowerCase(),
+      );
       // Thêm vào đầu danh sách (tìm kiếm gần nhất)
       _searchHistory.insert(0, query);
       // Giữ chỉ 10 tìm kiếm gần nhất
@@ -113,7 +114,9 @@ class _TodoHomePageState extends State<TodoHomePage> {
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Text('Xóa lịch sử tìm kiếm'),
-        content: const Text('Bạn có chắc chắn muốn xóa tất cả lịch sử tìm kiếm?'),
+        content: const Text(
+          'Bạn có chắc chắn muốn xóa tất cả lịch sử tìm kiếm?',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -122,7 +125,9 @@ class _TodoHomePageState extends State<TodoHomePage> {
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
             ),
             onPressed: () {
               setState(() => _searchHistory.clear());
@@ -136,7 +141,7 @@ class _TodoHomePageState extends State<TodoHomePage> {
   }
 
   /// Tìm kiếm từ lịch sử
-  /// 
+  ///
   /// Khi người dùng bấm vào một tìm kiếm cũ:
   /// - Đổ dữ liệu tìm kiếm vào search controller
   /// - Cập nhật _searchQuery để lọc danh sách
@@ -152,7 +157,7 @@ class _TodoHomePageState extends State<TodoHomePage> {
   }
 
   /// Thêm todo mới
-  /// 
+  ///
   /// Quy trình:
   /// 1. Kiểm tra title không rỗng (nếu rỗng → hiển thị lỗi)
   /// 2. Tạo Todo object mới với ID = timestamp hiện tại
@@ -165,7 +170,9 @@ class _TodoHomePageState extends State<TodoHomePage> {
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           title: Row(
             children: [
               Container(
@@ -174,10 +181,20 @@ class _TodoHomePageState extends State<TodoHomePage> {
                   color: Colors.red.shade100,
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Icon(Icons.error_rounded, color: Colors.red.shade700, size: 24),
+                child: Icon(
+                  Icons.error_rounded,
+                  color: Colors.red.shade700,
+                  size: 24,
+                ),
               ),
               const SizedBox(width: 12),
-              const Text('Lỗi', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+              const Text(
+                'Lỗi',
+                style: TextStyle(
+                  color: Colors.red,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ],
           ),
           content: const Text(
@@ -188,10 +205,15 @@ class _TodoHomePageState extends State<TodoHomePage> {
             ElevatedButton(
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.red,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
               ),
               onPressed: () => Navigator.pop(context),
-              child: const Text('Đã hiểu', style: TextStyle(color: Colors.white)),
+              child: const Text(
+                'Đã hiểu',
+                style: TextStyle(color: Colors.white),
+              ),
             ),
           ],
         ),
@@ -201,24 +223,26 @@ class _TodoHomePageState extends State<TodoHomePage> {
 
     // Tạo todo mới và thêm vào danh sách
     setState(() {
-      _todos.add(Todo(
-        id: DateTime.now().toString(),      // ID = timestamp hiện tại
-        title: title,                        // Nội dung task
-        deadline: _selectedDeadline,         // Thời hạn (nếu có)
-        time: _selectedTime,                 // Giờ (nếu có)
-      ));
+      _todos.add(
+        Todo(
+          id: DateTime.now().toString(), // ID = timestamp hiện tại
+          title: title, // Nội dung task
+          deadline: _selectedDeadline, // Thời hạn (nếu có)
+          time: _selectedTime, // Giờ (nếu có)
+        ),
+      );
     });
-    
+
     // Reset deadline, time
     _selectedDeadline = null;
     _selectedTime = null;
-    
+
     // Đóng dialog thêm
     Navigator.pop(context);
   }
 
   /// Cập nhật todo hiện có
-  /// 
+  ///
   /// Tương tự như _addTodo, nhưng:
   /// - Tìm todo theo id
   /// - Cập nhật title, deadline, time
@@ -228,7 +252,9 @@ class _TodoHomePageState extends State<TodoHomePage> {
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           title: Row(
             children: [
               Container(
@@ -237,10 +263,20 @@ class _TodoHomePageState extends State<TodoHomePage> {
                   color: Colors.red.shade100,
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Icon(Icons.error_rounded, color: Colors.red.shade700, size: 24),
+                child: Icon(
+                  Icons.error_rounded,
+                  color: Colors.red.shade700,
+                  size: 24,
+                ),
               ),
               const SizedBox(width: 12),
-              const Text('Lỗi', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+              const Text(
+                'Lỗi',
+                style: TextStyle(
+                  color: Colors.red,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ],
           ),
           content: const Text(
@@ -251,10 +287,15 @@ class _TodoHomePageState extends State<TodoHomePage> {
             ElevatedButton(
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.red,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
               ),
               onPressed: () => Navigator.pop(context),
-              child: const Text('Đã hiểu', style: TextStyle(color: Colors.white)),
+              child: const Text(
+                'Đã hiểu',
+                style: TextStyle(color: Colors.white),
+              ),
             ),
           ],
         ),
@@ -272,17 +313,17 @@ class _TodoHomePageState extends State<TodoHomePage> {
         _todos[index].time = _selectedTime;
       }
     });
-    
+
     // Reset deadline, time
     _selectedDeadline = null;
     _selectedTime = null;
-    
+
     // Đóng dialog
     Navigator.pop(context);
   }
 
   /// Xóa todo
-  /// 
+  ///
   /// Hiển thị dialog xác nhận trước khi xóa
   /// Nếu xác nhận → xóa khỏi _todos và hiển thị SnackBar
   void _deleteTodo(String id) {
@@ -304,7 +345,9 @@ class _TodoHomePageState extends State<TodoHomePage> {
             const Text('Xóa Task'),
           ],
         ),
-        content: const Text('Bạn có chắc chắn muốn xóa task này? Hành động này không thể hoàn tác.'),
+        content: const Text(
+          'Bạn có chắc chắn muốn xóa task này? Hành động này không thể hoàn tác.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -314,17 +357,19 @@ class _TodoHomePageState extends State<TodoHomePage> {
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red,
               foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
             ),
             onPressed: () {
               // Xóa todo từ danh sách
               setState(() {
                 _todos.removeWhere((todo) => todo.id == id);
               });
-              
+
               // Đóng dialog xác nhận
               Navigator.pop(context);
-              
+
               // Hiển thị thông báo thành công
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
@@ -337,7 +382,9 @@ class _TodoHomePageState extends State<TodoHomePage> {
                   ),
                   backgroundColor: Colors.red.shade600,
                   behavior: SnackBarBehavior.floating,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
                 ),
               );
             },
@@ -349,7 +396,7 @@ class _TodoHomePageState extends State<TodoHomePage> {
   }
 
   /// Đảo ngược trạng thái hoàn thành của một todo
-  /// 
+  ///
   /// Tìm todo theo id, sau đó:
   /// - Nếu isCompleted = false → thay đổi thành true (đã xong)
   /// - Nếu isCompleted = true → thay đổi thành false (chưa xong)
@@ -364,11 +411,11 @@ class _TodoHomePageState extends State<TodoHomePage> {
   /// Lọc danh sách todo theo 2 điều kiện:
   /// 1. Trạng thái (all / pending / completed)
   /// 2. Từ khóa tìm kiếm (không phân biệt chữ hoa/thường)
-  /// 
-  /// Trả về: List<Todo> đã lọc để hiển thị
+  ///
+  /// Trả về: Danh sách Todo đã lọc để hiển thị
   List<Todo> _getFilteredTodos() {
     List<Todo> filtered;
-    
+
     // ===== BƯỚC 1: Lọc theo trạng thái =====
     switch (_filterStatus) {
       case FilterStatus.all:
@@ -384,7 +431,7 @@ class _TodoHomePageState extends State<TodoHomePage> {
         filtered = _todos.where((todo) => todo.isCompleted).toList();
         break;
     }
-    
+
     // ===== BƯỚC 2: Lọc theo từ khóa tìm kiếm =====
     if (_searchQuery.isNotEmpty) {
       // So sánh: todo.title.toLowerCase() contains _searchQuery.toLowerCase()
@@ -393,13 +440,13 @@ class _TodoHomePageState extends State<TodoHomePage> {
         return todo.title.toLowerCase().contains(_searchQuery.toLowerCase());
       }).toList();
     }
-    
+
     // Trả về danh sách đã lọc
     return filtered;
   }
 
   /// Xóa toàn bộ tìm kiếm
-  /// 
+  ///
   /// - Xóa text trong search controller
   /// - Reset _searchQuery về rỗng
   /// - Ẩn panel lịch sử tìm kiếm
@@ -412,10 +459,10 @@ class _TodoHomePageState extends State<TodoHomePage> {
   }
 
   /// Xây dựng tiêu đề AppBar
-  /// 
+  ///
   /// Nếu không tìm kiếm:
   /// - Hiển thị tiêu đề "Task Manager"
-  /// 
+  ///
   /// Nếu đang tìm kiếm:
   /// - Hiển thị search field
   /// - Hiển thị lịch sử tìm kiếm (nếu có)
@@ -444,18 +491,24 @@ class _TodoHomePageState extends State<TodoHomePage> {
         ],
       );
     }
-    
+
     return Column(
       children: [
         TextField(
           controller: _searchController,
           decoration: InputDecoration(
             hintText: 'Tìm kiếm task...',
-            hintStyle: TextStyle(color: Colors.white.withOpacity(0.6)),
+            hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.6)),
             border: InputBorder.none,
-            prefixIcon: Icon(Icons.search, color: Colors.white.withOpacity(0.8)),
+            prefixIcon: Icon(
+              Icons.search,
+              color: Colors.white.withValues(alpha: 0.8),
+            ),
             suffixIcon: IconButton(
-              icon: Icon(Icons.close, color: Colors.white.withOpacity(0.8)),
+              icon: Icon(
+                Icons.close,
+                color: Colors.white.withValues(alpha: 0.8),
+              ),
               onPressed: _clearSearch,
             ),
           ),
@@ -463,7 +516,8 @@ class _TodoHomePageState extends State<TodoHomePage> {
           onChanged: (value) {
             setState(() {
               _searchQuery = value;
-              _showSearchHistory = value.trim().isEmpty && _searchHistory.isNotEmpty;
+              _showSearchHistory =
+                  value.trim().isEmpty && _searchHistory.isNotEmpty;
             });
           },
           onTap: () {
@@ -479,7 +533,10 @@ class _TodoHomePageState extends State<TodoHomePage> {
               child: Column(
                 children: [
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -505,29 +562,38 @@ class _TodoHomePageState extends State<TodoHomePage> {
                       ],
                     ),
                   ),
-                  ..._searchHistory.map((search) => InkWell(
-                    onTap: () => _searchFromHistory(search),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                      child: Row(
-                        children: [
-                          Icon(Icons.history, size: 16, color: Colors.white.withOpacity(0.6)),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              search,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                color: Colors.white.withOpacity(0.8),
-                                fontSize: 14,
+                  ..._searchHistory.map(
+                    (search) => InkWell(
+                      onTap: () => _searchFromHistory(search),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 10,
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.history,
+                              size: 16,
+                              color: Colors.white.withValues(alpha: 0.6),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                search,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  color: Colors.white.withValues(alpha: 0.8),
+                                  fontSize: 14,
+                                ),
                               ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
-                  )),
+                  ),
                 ],
               ),
             ),
@@ -542,10 +608,8 @@ class _TodoHomePageState extends State<TodoHomePage> {
     _selectedTime = null;
     showModalBottomSheet(
       context: context,
-      builder: (context) => _buildInputDialog(
-        title: 'Thêm Task Mới',
-        onSave: _addTodo,
-      ),
+      builder: (context) =>
+          _buildInputDialog(title: 'Thêm Task Mới', onSave: _addTodo),
       isScrollControlled: true,
     );
   }
@@ -614,7 +678,10 @@ class _TodoHomePageState extends State<TodoHomePage> {
                     hintStyle: TextStyle(color: Colors.grey.shade400),
                     filled: true,
                     fillColor: Colors.white,
-                    prefixIcon: Icon(Icons.task_alt, color: Theme.of(context).colorScheme.primary),
+                    prefixIcon: Icon(
+                      Icons.task_alt,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                       borderSide: BorderSide(color: Colors.grey.shade300),
@@ -630,7 +697,10 @@ class _TodoHomePageState extends State<TodoHomePage> {
                         width: 2,
                       ),
                     ),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 16,
+                    ),
                   ),
                   maxLines: null,
                   maxLength: 200,
@@ -650,14 +720,20 @@ class _TodoHomePageState extends State<TodoHomePage> {
                     children: [
                       Row(
                         children: [
-                          Icon(Icons.calendar_today, color: Colors.blue.shade600),
+                          Icon(
+                            Icons.calendar_today,
+                            color: Colors.blue.shade600,
+                          ),
                           const SizedBox(width: 12),
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               const Text(
                                 'Hạn chót',
-                                style: TextStyle(fontSize: 12, color: Colors.grey),
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey,
+                                ),
                               ),
                               Text(
                                 _selectedDeadline == null
@@ -704,14 +780,20 @@ class _TodoHomePageState extends State<TodoHomePage> {
                     children: [
                       Row(
                         children: [
-                          Icon(Icons.access_time, color: Colors.orange.shade600),
+                          Icon(
+                            Icons.access_time,
+                            color: Colors.orange.shade600,
+                          ),
                           const SizedBox(width: 12),
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               const Text(
                                 'Giờ',
-                                style: TextStyle(fontSize: 12, color: Colors.grey),
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey,
+                                ),
                               ),
                               Text(
                                 _selectedTime == null
@@ -752,9 +834,14 @@ class _TodoHomePageState extends State<TodoHomePage> {
                         onPressed: () => Navigator.pop(context),
                         style: TextButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 12),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
                         ),
-                        child: const Text('Hủy', style: TextStyle(fontSize: 16)),
+                        child: const Text(
+                          'Hủy',
+                          style: TextStyle(fontSize: 16),
+                        ),
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -762,12 +849,22 @@ class _TodoHomePageState extends State<TodoHomePage> {
                       child: ElevatedButton(
                         onPressed: () => onSave(_inputController.text),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Theme.of(context).colorScheme.primary,
+                          backgroundColor: Theme.of(
+                            context,
+                          ).colorScheme.primary,
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 12),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
                         ),
-                        child: const Text('Lưu', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                        child: const Text(
+                          'Lưu',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
                     ),
                   ],
@@ -787,8 +884,10 @@ class _TodoHomePageState extends State<TodoHomePage> {
     final completedCount = _todos.where((t) => t.isCompleted).length;
     final pendingCount = _todos.where((t) => !t.isCompleted).length;
     final totalCount = _todos.length;
-    final progressPercent = totalCount == 0 ? 0.0 : (completedCount / totalCount);
-    
+    final progressPercent = totalCount == 0
+        ? 0.0
+        : (completedCount / totalCount);
+
     // Add search to history when there's a valid search
     if (_searchQuery.trim().isNotEmpty && filteredTodos.isNotEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -813,10 +912,7 @@ class _TodoHomePageState extends State<TodoHomePage> {
             child: Container(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [
-                    const Color(0xFF5B4FFF),
-                    const Color(0xFF7B68EE),
-                  ],
+                  colors: [const Color(0xFF5B4FFF), const Color(0xFF7B68EE)],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
@@ -855,9 +951,9 @@ class _TodoHomePageState extends State<TodoHomePage> {
                         child: LinearProgressIndicator(
                           value: progressPercent,
                           minHeight: 8,
-                          backgroundColor: Colors.white.withOpacity(0.3),
+                          backgroundColor: Colors.white.withValues(alpha: 0.3),
                           valueColor: AlwaysStoppedAnimation<Color>(
-                            Colors.white.withOpacity(0.9),
+                            Colors.white.withValues(alpha: 0.9),
                           ),
                         ),
                       ),
@@ -873,7 +969,7 @@ class _TodoHomePageState extends State<TodoHomePage> {
                           label: 'Tổng Task',
                           value: totalCount.toString(),
                           color: Colors.white,
-                          bgColor: Colors.white.withOpacity(0.2),
+                          bgColor: Colors.white.withValues(alpha: 0.2),
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -883,7 +979,7 @@ class _TodoHomePageState extends State<TodoHomePage> {
                           label: 'Chưa Xong',
                           value: pendingCount.toString(),
                           color: Colors.amber.shade200,
-                          bgColor: Colors.amber.withOpacity(0.2),
+                          bgColor: Colors.amber.withValues(alpha: 0.2),
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -893,7 +989,7 @@ class _TodoHomePageState extends State<TodoHomePage> {
                           label: 'Đã Xong',
                           value: completedCount.toString(),
                           color: Colors.green.shade200,
-                          bgColor: Colors.green.withOpacity(0.2),
+                          bgColor: Colors.green.withValues(alpha: 0.2),
                         ),
                       ),
                     ],
@@ -913,21 +1009,25 @@ class _TodoHomePageState extends State<TodoHomePage> {
                     _buildFilterChip(
                       label: 'Tất Cả',
                       isActive: _filterStatus == FilterStatus.all,
-                      onTap: () => setState(() => _filterStatus = FilterStatus.all),
+                      onTap: () =>
+                          setState(() => _filterStatus = FilterStatus.all),
                       count: _todos.length,
                     ),
                     const SizedBox(width: 12),
                     _buildFilterChip(
                       label: 'Chưa Xong',
                       isActive: _filterStatus == FilterStatus.pending,
-                      onTap: () => setState(() => _filterStatus = FilterStatus.pending),
+                      onTap: () =>
+                          setState(() => _filterStatus = FilterStatus.pending),
                       count: _todos.where((t) => !t.isCompleted).length,
                     ),
                     const SizedBox(width: 12),
                     _buildFilterChip(
                       label: 'Đã Xong',
                       isActive: _filterStatus == FilterStatus.completed,
-                      onTap: () => setState(() => _filterStatus = FilterStatus.completed),
+                      onTap: () => setState(
+                        () => _filterStatus = FilterStatus.completed,
+                      ),
                       count: _todos.where((t) => t.isCompleted).length,
                     ),
                   ],
@@ -949,7 +1049,9 @@ class _TodoHomePageState extends State<TodoHomePage> {
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Icon(
-                        _searchQuery.trim().isNotEmpty ? Icons.search_off : Icons.inbox,
+                        _searchQuery.trim().isNotEmpty
+                            ? Icons.search_off
+                            : Icons.inbox,
                         size: 80,
                         color: Colors.grey.shade400,
                       ),
@@ -978,31 +1080,32 @@ class _TodoHomePageState extends State<TodoHomePage> {
             )
           else
             SliverList(
-              delegate: SliverChildBuilderDelegate(
-                (context, index) {
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    child: TodoItemWidget(
-                      todo: filteredTodos[index],
-                      onToggle: () => _toggleComplete(filteredTodos[index].id),
-                      onEdit: () => _showEditDialog(filteredTodos[index]),
-                      onDelete: () => _deleteTodo(filteredTodos[index].id),
-                    ),
-                  );
-                },
-                childCount: filteredTodos.length,
-              ),
+              delegate: SliverChildBuilderDelegate((context, index) {
+                return Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
+                  child: TodoItemWidget(
+                    todo: filteredTodos[index],
+                    onToggle: () => _toggleComplete(filteredTodos[index].id),
+                    onEdit: () => _showEditDialog(filteredTodos[index]),
+                    onDelete: () => _deleteTodo(filteredTodos[index].id),
+                  ),
+                );
+              }, childCount: filteredTodos.length),
             ),
-          SliverToBoxAdapter(
-            child: const SizedBox(height: 20),
-          ),
+          SliverToBoxAdapter(child: const SizedBox(height: 20)),
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _showAddDialog,
         backgroundColor: const Color(0xFF5B4FFF),
         icon: const Icon(Icons.add_rounded),
-        label: const Text('Thêm Task', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+        label: const Text(
+          'Thêm Task',
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+        ),
       ),
     );
   }
@@ -1011,7 +1114,7 @@ class _TodoHomePageState extends State<TodoHomePage> {
     if (_searchQuery.trim().isNotEmpty) {
       return 'Thử tìm kiếm với từ khóa khác';
     }
-    
+
     switch (_filterStatus) {
       case FilterStatus.all:
         return 'Hãy tạo task mới để bắt đầu';
@@ -1053,7 +1156,7 @@ class _TodoHomePageState extends State<TodoHomePage> {
             label,
             style: TextStyle(
               fontSize: 12,
-              color: color.withOpacity(0.8),
+              color: color.withValues(alpha: 0.8),
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -1094,7 +1197,7 @@ class _TodoHomePageState extends State<TodoHomePage> {
               CircleAvatar(
                 radius: 10,
                 backgroundColor: isActive
-                    ? Colors.white.withOpacity(0.3)
+                    ? Colors.white.withValues(alpha: 0.3)
                     : Colors.grey.shade400,
                 child: Text(
                   count.toString(),
