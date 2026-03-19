@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:baitap1/widgets/todo_item_widget.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-/// Hàm main: điểm vào của ứng dụng
+import 'presentation/auth/login_screen.dart';
+
 void main() {
-  runApp(const MyApp());
+  runApp(const ProviderScope(child: MyApp()));
 }
 
-/// Widget gốc của ứng dụng
-/// Cấu hình theme, navigation, và app settings
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
