@@ -7,12 +7,16 @@ class VoiceInputState {
   final bool isAvailable;
   final String recognizedText;
   final double soundLevel;
+  final String? error;
+  final String locale;
 
   const VoiceInputState({
     this.isListening = false,
     this.isAvailable = false,
     this.recognizedText = '',
     this.soundLevel = 0.0,
+    this.error,
+    this.locale = 'vi_VN',
   });
 
   VoiceInputState copyWith({
@@ -20,12 +24,16 @@ class VoiceInputState {
     bool? isAvailable,
     String? recognizedText,
     double? soundLevel,
+    String? error,
+    String? locale,
   }) {
     return VoiceInputState(
       isListening: isListening ?? this.isListening,
       isAvailable: isAvailable ?? this.isAvailable,
       recognizedText: recognizedText ?? this.recognizedText,
       soundLevel: soundLevel ?? this.soundLevel,
+      error: error,
+      locale: locale ?? this.locale,
     );
   }
 }
@@ -44,37 +52,83 @@ class VoiceInputNotifier extends StateNotifier<VoiceInputState> {
   }
 
   Future<void> _initialize() async {
-    final available = await _speech.initialize(
-      onError: (error) => state = state.copyWith(isListening: false),
-    );
-    state = state.copyWith(isAvailable: available);
+    try {
+      final available = await _speech.initialize(
+        onError: (error) {
+          state = state.copyWith(
+            isListening: false,
+            error: 'Lỗi: ${error.errorMsg}',
+          );
+        },
+        onStatus: (status) {
+          if (status == 'notListening') {
+            state = state.copyWith(isListening: false);
+          }
+        },
+      );
+      state = state.copyWith(isAvailable: available);
+    } catch (e) {
+      state = state.copyWith(error: 'Khởi tạo voice failed: $e');
+    }
   }
 
-  /// Bắt đầu nghe giọng nói
+  /// Bắt đầu nghe giọng nói Tiếng Việt
   Future<void> startListening({required Function(String) onResult}) async {
-    if (!state.isAvailable || state.isListening) return;
+    if (!state.isAvailable) {
+      state = state.copyWith(error: 'Voice recognition không khả dụng');
+      return;
+    }
 
-    state = state.copyWith(isListening: true, recognizedText: '');
+    if (state.isListening) return;
 
-    await _speech.listen(
-      onResult: (result) {
-        state = state.copyWith(recognizedText: result.recognizedWords);
-        if (result.finalResult) {
-          onResult(result.recognizedWords);
-          state = state.copyWith(isListening: false);
-        }
-      },
-      localeId: 'vi-VN', // Nhận dạng tiếng Việt
-      listenFor: const Duration(seconds: 30),
-      pauseFor: const Duration(seconds: 3),
-      onSoundLevelChange: (level) => state = state.copyWith(soundLevel: level),
-    );
+    try {
+      state = state.copyWith(
+        isListening: true,
+        recognizedText: '',
+        error: null,
+      );
+
+      await _speech.listen(
+        onResult: (result) {
+          state = state.copyWith(recognizedText: result.recognizedWords);
+          if (result.finalResult) {
+            onResult(result.recognizedWords);
+            state = state.copyWith(isListening: false);
+          }
+        },
+        localeId: 'vi_VN', // Nhận dạng Tiếng Việt
+        listenFor: const Duration(seconds: 45),
+        pauseFor: const Duration(seconds: 4),
+        partialResults: true, // Hiển thị kết quả từng phần
+        onSoundLevelChange: (level) => state = state.copyWith(soundLevel: level),
+      );
+    } catch (e) {
+      state = state.copyWith(
+        isListening: false,
+        error: 'Lỗi nghe: $e',
+      );
+    }
   }
 
   /// Dừng nghe
   Future<void> stopListening() async {
     await _speech.stop();
     state = state.copyWith(isListening: false);
+  }
+
+  /// Hủy bỏ nghe
+  Future<void> cancelListening() async {
+    await _speech.cancel();
+    state = state.copyWith(
+      isListening: false,
+      recognizedText: '',
+      error: null,
+    );
+  }
+
+  /// Lấy danh sách ngôn ngữ hỗ trợ
+  Future<List<LocaleName>> getLocales() async {
+    return await _speech.locales();
   }
 
   @override

@@ -42,10 +42,10 @@ class GeoLocationService {
         debugPrint('📍 Permission request result: $result');
         if (result == LocationPermission.denied) {
           debugPrint('❌ Permission denied, using default location for testing');
-          // Return a default location for testing (Ho Chi Minh City, Vietnam)
+          // Return a default location for testing (Ha Noi, Vietnam)
           return Position(
-            latitude: 10.7769,
-            longitude: 106.6869,
+            latitude: 21.0285,
+            longitude: 105.8542,
             timestamp: DateTime.now(),
             accuracy: 50,
             altitude: 0,
@@ -60,10 +60,10 @@ class GeoLocationService {
 
       if (permission == LocationPermission.deniedForever) {
         debugPrint('❌ Permission denied forever, using default location for testing');
-        // Return a default location for testing (Ho Chi Minh City, Vietnam)
+        // Return a default location for testing (Ha Noi, Vietnam)
         return Position(
-          latitude: 10.7769,
-          longitude: 106.6869,
+          latitude: 21.0285,
+          longitude: 105.8542,
           timestamp: DateTime.now(),
           accuracy: 50,
           altitude: 0,
@@ -75,27 +75,43 @@ class GeoLocationService {
         );
       }
 
-      debugPrint('📍 Getting current position...');
+      debugPrint('📍 Getting current position with high accuracy...');
       final position = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high,
+        timeLimit: const Duration(seconds: 30), // Timeout 30 giây
       );
+      
       debugPrint('✅ Location received: ${position.latitude}, ${position.longitude}');
+      debugPrint('📍 Accuracy: ${position.accuracy}m');
+      
       return position;
     } catch (e) {
-      debugPrint('⚠️ Error getting location: $e, using default location');
-      // Return a default location on error (Ho Chi Minh City, Vietnam)
-      return Position(
-        latitude: 10.7769,
-        longitude: 106.6869,
-        timestamp: DateTime.now(),
-        accuracy: 50,
-        altitude: 0,
-        altitudeAccuracy: 0,
-        heading: 0,
-        headingAccuracy: 0,
-        speed: 0,
-        speedAccuracy: 0,
-      );
+      debugPrint('⚠️ Error getting location: $e, retrying with medium accuracy...');
+      
+      try {
+        // Retry với medium accuracy nếu high accuracy thất bại
+        final position = await Geolocator.getCurrentPosition(
+          desiredAccuracy: LocationAccuracy.medium,
+          timeLimit: const Duration(seconds: 15),
+        );
+        debugPrint('✅ Location received (medium accuracy): ${position.latitude}, ${position.longitude}');
+        return position;
+      } catch (retryError) {
+        debugPrint('⚠️ Retry failed: $retryError, using default location');
+        // Return a default location on error (Ha Noi, Vietnam)
+        return Position(
+          latitude: 21.0285,
+          longitude: 105.8542,
+          timestamp: DateTime.now(),
+          accuracy: 50,
+          altitude: 0,
+          altitudeAccuracy: 0,
+          heading: 0,
+          headingAccuracy: 0,
+          speed: 0,
+          speedAccuracy: 0,
+        );
+      }
     }
   }
 

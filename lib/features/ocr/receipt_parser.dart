@@ -2,24 +2,37 @@
 class ReceiptParser {
   /// Trích xuất số tiền từ text hóa đơn
   static double? extractAmount(String text) {
-    // Ưu tiên lấy từ các từ khóa tổng tiền trước
+    // Pattern 1: VND X,XXX,XXX (ưu tiên cao nhất - giao dịch ngân hàng)
+    final vndPatternWithComma = RegExp(
+      r'vnd\s*(\d{1,3}(?:,\d{3})+)',
+      caseSensitive: false,
+    );
+    final vndCommaMatch = vndPatternWithComma.firstMatch(text);
+    if (vndCommaMatch != null) {
+      final cleaned = vndCommaMatch.group(1)!.replaceAll(',', '');
+      final amount = double.tryParse(cleaned);
+      if (amount != null && amount >= 1000) return amount;
+    }
+
+    // Pattern 2: Tổng/Total/Thành tiền
     final keywordPatterns = [
-      RegExp(r'tổng[:\s]+(\d[\d.,]+)', caseSensitive: false),
-      RegExp(r'total[:\s]+(\d[\d.,]+)', caseSensitive: false),
-      RegExp(r'thành tiền[:\s]+(\d[\d.,]+)', caseSensitive: false),
+      RegExp(r'tổng[:\s]*(?:tiền)?[:\s]*(\d[\d.,]+)', caseSensitive: false),
+      RegExp(r'total[:\s]*(\d[\d.,]+)', caseSensitive: false),
+      RegExp(r'thành tiền[:\s]*(\d[\d.,]+)', caseSensitive: false),
+      RegExp(r'chuyên thành công[:\s]*(?:vnd)?[:\s]*(\d[\d.,]+)', caseSensitive: false),
     ];
 
     for (final pattern in keywordPatterns) {
       final match = pattern.firstMatch(text);
       if (match != null) {
         final parsed = _parseAmountString(match.group(1)!);
-        if (parsed != null) return parsed;
+        if (parsed != null && parsed >= 1000) return parsed;
       }
     }
 
-    // Format VNĐ: dùng dấu chấm phân nhóm hàng nghìn (1.000.000)
+    // Pattern 3: Format VNĐ: dấu chấm phân nhóm (1.000.000)
     final dotSeparatedPattern = RegExp(
-      r'(\d{1,3}(?:\.\d{3})+)(?:đ|vnd|vnđ)?',
+      r'(\d{1,3}(?:\.\d{3})+)(?:\s*(?:đ|vnd|vnđ))?',
       caseSensitive: false,
     );
     final dotMatch = dotSeparatedPattern.firstMatch(text);
@@ -30,22 +43,24 @@ class ReceiptParser {
       if (amount != null && amount >= 1000) return amount;
     }
 
-    // Format quốc tế: dùng dấu phẩy phân nhóm (1,000,000)
+    // Pattern 4: Format quốc tế: dấu phẩy phân nhóm (1,000,000)
     final commaSeparatedPattern = RegExp(
-      r'(\d{1,3}(?:,\d{3})+)(?:đ|vnd|vnđ)?',
+      r'(\d{1,3}(?:,\d{3})+)(?:\s*(?:đ|vnd|vnđ))?',
       caseSensitive: false,
     );
     final commaMatch = commaSeparatedPattern.firstMatch(text);
     if (commaMatch != null) {
       final cleaned = commaMatch.group(1)!.replaceAll(',', '');
-      return double.tryParse(cleaned);
+      final amount = double.tryParse(cleaned);
+      if (amount != null && amount >= 1000) return amount;
     }
 
-    // Số kèm ký hiệu tiền tệ không có phân cách
-    final currencyPattern = RegExp(r'(\d+)(?:đ|vnd|vnđ)', caseSensitive: false);
+    // Pattern 5: Số kèm ký hiệu tiền tệ không có phân cách
+    final currencyPattern = RegExp(r'(\d+)\s*(?:đ|vnd|vnđ)', caseSensitive: false);
     final currencyMatch = currencyPattern.firstMatch(text);
     if (currencyMatch != null) {
-      return double.tryParse(currencyMatch.group(1)!);
+      final amount = double.tryParse(currencyMatch.group(1)!);
+      if (amount != null && amount >= 1000) return amount;
     }
 
     return null;
