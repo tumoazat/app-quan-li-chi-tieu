@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../providers/theme_provider.dart';
 import '../../core/l10n/locale_provider.dart';
-import '../../core/router/app_router.dart';
-import '../../providers/auth_provider.dart';
 import '../profile/account_deletion_dialog.dart';
+import '../../providers/auth_provider.dart';
 
 /// Màn hình Cài đặt đầy đủ
 class SettingsScreen extends ConsumerStatefulWidget {
@@ -122,15 +120,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             subtitle: const Text('Sắp ra mắt'),
             enabled: false,
             trailing: const Chip(label: Text('Soon')),
-          ),
-          ListTile(
-            leading: const Icon(Icons.lock_open),
-            title: const Text('🤖 Quyền Chatbot'),
-            subtitle: const Text('Quản lý quyền truy cập AI'),
-            trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-            onTap: () {
-              context.push(AppRouter.chatbotPermissions);
-            },
           ),
           const Divider(),
 

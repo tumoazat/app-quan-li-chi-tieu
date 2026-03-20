@@ -307,19 +307,13 @@ Mạo hiểm: 10% tiết kiệm, 10% vàng, 40% chứng khoán, 40% crypto
       ));
     }
 
-    // 2. Groq (free tier, very fast) - ưu tiên cao
+    // 2. Groq (free tier, very fast)
     final groqKey = dotenv.env['GROQ_API_KEY'] ?? '';
     if (groqKey.isNotEmpty) {
       _providers.add(AiProvider(
-        name: 'Groq Llama 3.3',
+        name: 'Groq Llama',
         apiKey: groqKey,
         model: 'llama-3.3-70b-versatile',
-        type: 'groq',
-      ));
-      _providers.add(AiProvider(
-        name: 'Groq Llama 3',
-        apiKey: groqKey,
-        model: 'llama-3.1-70b-versatile',
         type: 'groq',
       ));
     }
@@ -579,7 +573,6 @@ Mạo hiểm: 10% tiết kiệm, 10% vàng, 40% chứng khoán, 40% crypto
     required List<TransactionModel> transactions,
     required double monthlyBudget,
     String? userName,
-    bool fullAccess = true,
   }) {
     final expenses = transactions.where((t) => t.isExpense).toList();
     final incomes = transactions.where((t) => t.isIncome).toList();
@@ -589,9 +582,6 @@ Mạo hiểm: 10% tiết kiệm, 10% vàng, 40% chứng khoán, 40% crypto
     final balance = totalIncome - totalExpense;
     final savingRate = totalIncome > 0
         ? ((totalIncome - totalExpense) / totalIncome * 100) : 0.0;
-
-    // Full access data for comprehensive analysis
-    final accessLevel = fullAccess ? '✅ TOÀN QUYỀN' : '⚠️ CẬP HẠN';
 
     final categoryTotals = <String, double>{};
     final categoryCounts = <String, int>{};
@@ -612,16 +602,13 @@ Mạo hiểm: 10% tiết kiệm, 10% vàng, 40% chứng khoán, 40% crypto
     }).join('\n');
 
     final incomeTotals = <String, double>{};
-    final incomeCounts = <String, int>{};
     for (var income in incomes) {
       incomeTotals[income.categoryId] =
           (incomeTotals[income.categoryId] ?? 0) + income.amount;
-      incomeCounts[income.categoryId] =
-          (incomeCounts[income.categoryId] ?? 0) + 1;
     }
     final incomeBreakdown = incomeTotals.entries.map((entry) {
       final cat = CategoryModel.findById(entry.key);
-      return '  - ${cat?.emoji ?? '💰'} ${cat?.name ?? entry.key}: ${CurrencyFormatter.formatVND(entry.value)} (${incomeCounts[entry.key]} GD)';
+      return '  - ${cat?.emoji ?? '💰'} ${cat?.name ?? entry.key}: ${CurrencyFormatter.formatVND(entry.value)}';
     }).join('\n');
 
     final budgetUsed = monthlyBudget > 0
@@ -635,7 +622,7 @@ Mạo hiểm: 10% tiết kiệm, 10% vàng, 40% chứng khoán, 40% crypto
 
     final recentTransactions = List<TransactionModel>.from(transactions)
       ..sort((a, b) => b.date.compareTo(a.date));
-    final recentList = recentTransactions.take(10).map((t) {
+    final recentList = recentTransactions.take(5).map((t) {
       final cat = CategoryModel.findById(t.categoryId);
       final sign = t.isIncome ? '+' : '-';
       return '  - ${t.date.day}/${t.date.month}: $sign${CurrencyFormatter.formatVND(t.amount)} (${cat?.name ?? t.categoryId})${t.note != null ? ' - ${t.note}' : ''}';
@@ -648,52 +635,27 @@ Mạo hiểm: 10% tiết kiệm, 10% vàng, 40% chứng khoán, 40% crypto
       largestExpense = '${CurrencyFormatter.formatVND(largest.amount)} (${cat?.name ?? largest.categoryId}, ngày ${largest.date.day}/${largest.date.month})';
     }
 
-    // Calculate daily average
-    final daysCounted = transactions.isNotEmpty
-        ? (now.difference(recentTransactions.last.date).inDays + 1).clamp(1, double.infinity).toInt()
-        : 0;
-    final dailyAverageExpense = daysCounted > 0 ? (totalExpense / daysCounted) : 0.0;
-
-    // Financial health score
-    final healthScore = _calculateHealthScore(totalIncome, totalExpense, monthlyBudget);
-
     return '''
-� QUYỀN TRUY CẬP: $accessLevel
 📊 DỮ LIỆU TÀI CHÍNH THÁNG ${now.month}/${now.year}:
 ${userName != null ? '👤 Người dùng: $userName' : ''}
-💵 Thu nhập: ${CurrencyFormatter.formatVND(totalIncome)} (${incomes.length} giao dịch)
-💸 Chi tiêu: ${CurrencyFormatter.formatVND(totalExpense)} (${expenses.length} giao dịch)
+💵 Thu nhập: ${CurrencyFormatter.formatVND(totalIncome)} (${incomes.length} GD)
+💸 Chi tiêu: ${CurrencyFormatter.formatVND(totalExpense)} (${expenses.length} GD)
 💰 Số dư: ${CurrencyFormatter.formatVND(balance)}
-📊 Tỉ lệ tiết kiệm: ${savingRate.toStringAsFixed(1)}%
+📊 Tiết kiệm: ${savingRate.toStringAsFixed(1)}%
 🏦 Ngân sách: ${monthlyBudget > 0 ? '${CurrencyFormatter.formatVND(monthlyBudget)} (đã dùng $budgetUsed%)' : 'Chưa đặt'}
 ⏰ Còn $daysLeft ngày, còn ${dailyBudgetLeft > 0 ? '${CurrencyFormatter.formatVND(dailyBudgetLeft)}/ngày' : 'N/A'}
-📈 Chi tiêu trung bình: ${CurrencyFormatter.formatVND(dailyAverageExpense)}/ngày
-❤️ Điểm sức khỏe tài chính: ${(healthScore * 100).toStringAsFixed(1)}%
 
-📉 CHI TIÊU THEO DANH MỤC:
+📉 CHI TIÊU:
 $categoryBreakdown
 
-📈 THU NHẬP THEO DANH MỤC:
+📈 THU NHẬP:
 $incomeBreakdown
 
-🏷️ 10 GIAO DỊCH GẦN ĐÂY:
+🏷️ GẦN ĐÂY:
 $recentList
 
-🔴 GIAO DỊCH LỚN NHẤT: $largestExpense
+🔴 LỚN NHẤT: $largestExpense
 ''';
-  }
-
-  // ===== FULL ACCESS INDICATOR =====
-  /// Calculate financial health score (0.0 to 1.0)
-  double _calculateHealthScore(double income, double expense, double budget) {
-    if (income == 0) return 0.0;
-    
-    final savingRate = (income - expense) / income;
-    final budgetHealthy = budget > 0
-        ? (1.0 - (expense / budget).clamp(0, 1))
-        : 0.5;
-    
-    return ((savingRate.clamp(0, 1) + budgetHealthy) / 2).clamp(0, 1);
   }
 
   // ============================================

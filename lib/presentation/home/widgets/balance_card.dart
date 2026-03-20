@@ -21,20 +21,24 @@ class BalanceCard extends ConsumerWidget {
 
     return transactionsAsync.when(
       data: (transactions) {
-        double totalIncome = 0;
-        double totalExpense = 0;
+        // 1. Tính tổng thu nhập: Lọc các giao dịch thu nhập và cộng dồn
+        final totalIncome = transactions
+            .where((t) => t.isIncome)
+            .fold<double>(0, (prev, t) => prev + t.amount);
 
-        for (var transaction in transactions) {
-          if (transaction.isIncome) {
-            totalIncome += transaction.amount;
-          } else {
-            totalExpense += transaction.amount;
-          }
-        }
+        // 2. Tính tổng chi tiêu: Lọc các giao dịch chi tiêu và cộng dồn
+        // Khoản chi đã là số âm, nên cộng vào sẽ cho ra tổng chi (dạng âm)
+        final totalExpenseRaw = transactions
+            .where((t) => !t.isIncome)
+            .fold<double>(0, (prev, t) => prev + t.amount);
+        
+        // 3. Tính số dư: Đơn giản là tổng thu nhập + tổng chi tiêu (đã ở dạng âm)
+        final balance = totalIncome + totalExpenseRaw;
 
-        final balance = totalIncome - totalExpense;
-
-        return _buildCard(context, balance, totalIncome, totalExpense);
+        // 4. Chuẩn bị số liệu để hiển thị:
+        //    - totalIncome: đã là số dương
+        //    - totalExpense: lấy giá trị tuyệt đối của tổng chi để hiển thị số dương
+        return _buildCard(context, balance, totalIncome, totalExpenseRaw.abs());
       },
       loading: () {
         return _buildCard(context, 0, 0, 0, isLoading: true);

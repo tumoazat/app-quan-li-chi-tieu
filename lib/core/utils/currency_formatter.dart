@@ -4,13 +4,13 @@ import '../constants/app_constants.dart';
 class CurrencyFormatter {
   // Format VND currency with Vietnamese style (dot separator for thousands)
   static String formatVND(double amount, {bool showSymbol = true}) {
-    final formatter = NumberFormat('#,##0', 'vi_VN');
-    final formatted = formatter.format(amount.abs());
+    final formatter = NumberFormat.currency(locale: 'vi_VN', symbol: '');
+    final formatted = formatter.format(amount);
     
     if (showSymbol) {
-      return '${AppConstants.currencySymbol}$formatted';
+      return '${AppConstants.currencySymbol}$formatted'.trim();
     }
-    return formatted;
+    return formatted.trim();
   }
 
   // Format with +/- prefix for income/expense
