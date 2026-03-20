@@ -16,6 +16,7 @@ import '../../presentation/transactions/screens/receipt_camera_screen.dart';
 import '../../presentation/statistics/screens/geo_location_analytics_screen.dart';
 import '../../presentation/transactions/screens/transaction_map_screen.dart';
 import '../../presentation/transactions/screens/voice_input_screen.dart';
+import '../../presentation/settings/screens/chatbot_permissions_screen.dart';
 
 class AppRouter {
   static const String login = '/login';
@@ -34,6 +35,7 @@ class AppRouter {
   static const String geoAnalytics = '/geo-analytics';
   static const String transactionMap = '/transaction-map';
   static const String voiceInput = '/voice-input';
+  static const String chatbotPermissions = '/chatbot-permissions';
 
   // Create router configuration
   static GoRouter createRouter({
@@ -105,6 +107,12 @@ class AppRouter {
         GoRoute(
           path: voiceInput,
           builder: (context, state) => const VoiceInputScreen(),
+        ),
+
+        // Chatbot Permissions
+        GoRoute(
+          path: chatbotPermissions,
+          builder: (context, state) => const ChatbotPermissionsScreen(),
         ),
 
         // Main app with bottom navigation shell

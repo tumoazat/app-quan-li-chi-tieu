@@ -1,4 +1,5 @@
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
+import '../../features/ocr/receipt_parser.dart';
 
 class ReceiptOCRService {
   static final ReceiptOCRService _instance = ReceiptOCRService._internal();
@@ -20,16 +21,22 @@ class ReceiptOCRService {
           await _textRecognizer.processImage(inputImage);
 
       final fullText = recognizedText.text;
-      final amount = _extractAmount(fullText);
+      
+      // Use ReceiptParser for accurate amount extraction
+      final parsed = ReceiptParser.parse(fullText);
+      final amount = (parsed['amount'] as double?) ?? 0.0;
+      final description = parsed['description'] as String? ?? '';
+      
       final category = _detectCategory(fullText);
-      final date = _extractDate(fullText);
+      final date = parsed['date'] as DateTime?;
 
       return {
         'success': true,
         'amount': amount,
         'category': category,
-        'description': fullText,
+        'description': description,
         'date': date,
+        'rawText': fullText,
       };
     } catch (e) {
       return {
@@ -37,36 +44,6 @@ class ReceiptOCRService {
         'error': e.toString(),
       };
     }
-  }
-
-  /// Extract amount using regex patterns
-  double _extractAmount(String text) {
-    // Pattern: 50000, 50.000, 50,00, 50k, 50m
-    final patterns = [
-      RegExp(r'(\d+)[.,]?(\d{3})[.,]?(\d{2})'),
-      RegExp(r'(\d+)[km](?:\s|$)'),
-      RegExp(r'(\d{2,})[.,](\d{2})'),
-      RegExp(r'(\d+)'),
-    ];
-
-    for (final pattern in patterns) {
-      final match = pattern.firstMatch(text);
-      if (match != null) {
-        String amount = match.group(1)!;
-        final suffix = match.group(2) ?? '';
-
-        double value = double.tryParse(amount) ?? 0;
-
-        if (suffix.contains('k')) value *= 1000;
-        if (suffix.contains('m')) value *= 1000000;
-        if (suffix.contains('b')) value *= 1000000000;
-
-        if (value > 0 && value < 1000000000) {
-          return value;
-        }
-      }
-    }
-    return 0.0;
   }
 
   /// Detect category based on keywords
@@ -107,27 +84,6 @@ class ReceiptOCRService {
     }
 
     return 'Other';
-  }
-
-  /// Extract date from text
-  DateTime? _extractDate(String text) {
-    // Pattern: DD/MM/YYYY, DD-MM-YYYY, DD.MM.YYYY
-    final datePattern =
-        RegExp(r'(\d{1,2})[/-](\d{1,2})[/-](\d{2,4})');
-    final match = datePattern.firstMatch(text);
-
-    if (match != null) {
-      try {
-        final day = int.parse(match.group(1)!);
-        final month = int.parse(match.group(2)!);
-        final year = int.parse(match.group(3)!);
-
-        return DateTime(year, month, day);
-      } catch (e) {
-        return null;
-      }
-    }
-    return null;
   }
 
   void dispose() {

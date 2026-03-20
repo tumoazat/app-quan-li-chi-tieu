@@ -92,7 +92,10 @@ class VoiceInputNotifier extends StateNotifier<VoiceInputState> {
         onResult: (result) {
           state = state.copyWith(recognizedText: result.recognizedWords);
           if (result.finalResult) {
-            onResult(result.recognizedWords);
+            final recognizedText = result.recognizedWords.trim();
+            if (recognizedText.isNotEmpty) {
+              onResult(recognizedText);
+            }
             state = state.copyWith(isListening: false);
           }
         },

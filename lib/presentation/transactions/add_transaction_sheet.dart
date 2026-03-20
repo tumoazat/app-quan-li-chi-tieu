@@ -17,6 +17,7 @@ import '../../features/ai_categorization/application/categorization_notifier.dar
 import '../shared/gradient_button.dart';
 import '../../core/router/app_router.dart';
 import '../../core/services/geo_location_service.dart';
+import '../../core/services/voice_input_service.dart';
 
 class AddTransactionSheet extends ConsumerStatefulWidget {
   final TransactionModel? editTransaction;
@@ -254,18 +255,82 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
                   
                   const SizedBox(height: 16),
                   
-                  // Note field
-                  TextField(
-                    controller: _noteController,
-                    decoration: InputDecoration(
-                      prefixIcon: const Icon(Icons.note),
-                      hintText: 'Thêm ghi chú...',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
+                  // Note field with voice input
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: _noteController,
+                          decoration: InputDecoration(
+                            prefixIcon: const Icon(Icons.note),
+                            hintText: 'Thêm ghi chú...',
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          maxLines: 2,
+                          onChanged: _onNoteChanged,
+                        ),
                       ),
-                    ),
-                    maxLines: 2,
-                    onChanged: _onNoteChanged,
+                      const SizedBox(width: 12),
+                      // Voice input button
+                      Consumer(
+                        builder: (context, ref, _) {
+                          final voiceState = ref.watch(voiceInputProvider);
+                          return GestureDetector(
+                            onTapDown: voiceState.isAvailable
+                                ? (_) async {
+                                    await ref
+                                        .read(voiceInputProvider.notifier)
+                                        .startListening(
+                                          onResult: (text) {
+                                            setState(() {
+                                              final currentNote = _noteController.text;
+                                              _noteController.text = 
+                                                currentNote.isEmpty 
+                                                  ? text 
+                                                  : '$currentNote $text';
+                                            });
+                                          },
+                                        );
+                                  }
+                                : null,
+                            onTapUp: (_) async {
+                              await ref
+                                  .read(voiceInputProvider.notifier)
+                                  .stopListening();
+                            },
+                            onTapCancel: () async {
+                              await ref
+                                  .read(voiceInputProvider.notifier)
+                                  .cancelListening();
+                            },
+                            child: Container(
+                              width: 56,
+                              height: 56,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: voiceState.isListening
+                                    ? AppColors.primary
+                                    : AppColors.primary.withOpacity(0.7),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: AppColors.primary.withOpacity(
+                                      voiceState.isListening ? 0.6 : 0.3,
+                                    ),
+                                    blurRadius: voiceState.isListening ? 15 : 8,
+                                  ),
+                                ],
+                              ),
+                              child: Icon(
+                                voiceState.isListening ? Icons.mic : Icons.mic_none,
+                                color: Colors.white,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
                   ),
 
                   // AI suggestion chip
