@@ -24,7 +24,8 @@
 - Phân tích chi tiết từng danh mục
 - Tổng quan thu chi tháng
 - Tỷ lệ tiết kiệm
-
+  
+#Xua
 ### 🤖 AI Chatbot Tài Chính (Google Gemini 2.0 Flash)
 - Chatbot AI trò chuyện real-time bằng tiếng Việt
 - Tự động đọc dữ liệu thu/chi/ngân sách từ Firestore
@@ -34,8 +35,9 @@
 - Lập kế hoạch tài chính cho tháng sau
 - 6 gợi ý nhanh (Quick Actions) có sẵn
 - Giao diện chat hiện đại với animation
-- Hỗ trợ dark mode
-
+### Xuất dữ liệu 
+-Đặt ngân sách chỉ tiêu 
+-Xuất dữ liệu báo cáo chi tiêu theo tháng
 ### 👤 Cá nhân
 - Quản lý hồ sơ cá nhân
 - Cài đặt ngân sách tháng
