@@ -7,7 +7,6 @@ import 'auth_provider.dart';
 final transactionRepositoryProvider = Provider<TransactionRepository>((ref) {
   return TransactionRepository();
 });
-
 // Transactions stream provider for a specific month
 // Key format: "year-month" e.g. "2026-2"
 final transactionsStreamProvider = StreamProvider.autoDispose
