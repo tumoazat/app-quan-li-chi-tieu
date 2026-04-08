@@ -11,8 +11,8 @@ import 'core/services/geo_location_service.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  // Load environment variables (.env file)
-  await dotenv.load(fileName: ".env");
+  // Load environment variables
+  await dotenv.load(fileName: "assets/env/app.env");
   
   // Initialize Firebase
   try {

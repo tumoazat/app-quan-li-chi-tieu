@@ -62,7 +62,7 @@ class _VoiceInputButtonState extends ConsumerState<VoiceInputButton>
       onTapCancel: () async {
         _animationController.stop();
         _animationController.reset();
-        await ref.read(voiceInputProvider.notifier).cancelListening();
+        await ref.read(voiceInputProvider.notifier).stopListening();
       },
       child: Stack(
         alignment: Alignment.center,
@@ -220,37 +220,6 @@ class VoiceInputWidget extends ConsumerWidget {
                 Text(
                   voiceState.recognizedText,
                   style: const TextStyle(fontSize: 14),
-                ),
-              ],
-            ),
-          ),
-
-        // Error message
-        if (voiceState.error != null)
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(12),
-            margin: const EdgeInsets.only(top: 12),
-            decoration: BoxDecoration(
-              color: Colors.red.withOpacity(0.1),
-              border: Border.all(color: Colors.red),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Lỗi:',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.red,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  voiceState.error!,
-                  style: const TextStyle(fontSize: 12),
                 ),
               ],
             ),

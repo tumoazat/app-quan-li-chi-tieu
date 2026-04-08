@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/chat_provider.dart';
 import '../../providers/transaction_provider.dart';
@@ -138,7 +139,8 @@ class _AiAdviceScreenState extends ConsumerState<AiAdviceScreen> {
               itemBuilder: (context, index) {
                 return ChatBubble(
                   message: messages[index],
-                  showAvatar: index == 0 ||
+                  showAvatar:
+                      index == 0 ||
                       messages[index].role != messages[index - 1].role,
                 );
               },
@@ -194,29 +196,42 @@ class _AiAdviceScreenState extends ConsumerState<AiAdviceScreen> {
           ),
           // Text input
           Expanded(
-            child: TextField(
-              controller: _controller,
-              focusNode: _focusNode,
-              textCapitalization: TextCapitalization.sentences,
-              maxLines: 4,
-              minLines: 1,
-              decoration: InputDecoration(
-                hintText: 'Hỏi về tài chính của bạn...',
-                hintStyle: TextStyle(
-                  color: isDark ? Colors.grey[500] : Colors.grey[400],
+            child: Focus(
+              onKeyEvent: (_, event) {
+                final isEnter = event.logicalKey == LogicalKeyboardKey.enter;
+                final isShiftPressed = HardwareKeyboard.instance.isShiftPressed;
+
+                if (event is KeyDownEvent && isEnter && !isShiftPressed) {
+                  _sendMessage(_controller.text);
+                  return KeyEventResult.handled;
+                }
+
+                return KeyEventResult.ignored;
+              },
+              child: TextField(
+                controller: _controller,
+                focusNode: _focusNode,
+                textCapitalization: TextCapitalization.sentences,
+                maxLines: 4,
+                minLines: 1,
+                decoration: InputDecoration(
+                  hintText: 'Hỏi về tài chính của bạn...',
+                  hintStyle: TextStyle(
+                    color: isDark ? Colors.grey[500] : Colors.grey[400],
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(24),
+                    borderSide: BorderSide.none,
+                  ),
+                  filled: true,
+                  fillColor: isDark ? Colors.grey[850] : Colors.grey[100],
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 10,
+                  ),
                 ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(24),
-                  borderSide: BorderSide.none,
-                ),
-                filled: true,
-                fillColor: isDark ? Colors.grey[850] : Colors.grey[100],
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 10,
-                ),
+                onSubmitted: _sendMessage,
               ),
-              onSubmitted: _sendMessage,
             ),
           ),
           const SizedBox(width: 4),
@@ -227,7 +242,11 @@ class _AiAdviceScreenState extends ConsumerState<AiAdviceScreen> {
               shape: BoxShape.circle,
             ),
             child: IconButton(
-              icon: const Icon(Icons.send_rounded, color: Colors.white, size: 20),
+              icon: const Icon(
+                Icons.send_rounded,
+                color: Colors.white,
+                size: 20,
+              ),
               onPressed: () => _sendMessage(_controller.text),
             ),
           ),

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:geolocator/geolocator.dart';
 import '../../core/services/geo_location_service.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_typography.dart';
@@ -56,15 +55,7 @@ class _LocationMapScreenState extends State<LocationMapScreen> {
 
         // Zoom camera tới vị trí hiện tại
         _mapController.animateCamera(
-          CameraUpdateOptions(
-            bounds: CameraUpdateBounds(
-              bounds: LatLngBounds(
-                southwest: _currentLocation!,
-                northeast: _currentLocation!,
-              ),
-            ),
-            zoom: 16.0,
-          ),
+          CameraUpdate.newLatLngZoom(_currentLocation!, 16.0),
         );
       } else {
         // Fallback: mặc định Sài Gòn
