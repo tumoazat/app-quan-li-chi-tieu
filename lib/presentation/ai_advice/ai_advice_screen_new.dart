@@ -137,6 +137,7 @@ class _AiAdviceScreenState extends ConsumerState<AiAdviceScreen> {
               itemCount: messages.length,
               itemBuilder: (context, index) {
                 return ChatBubble(
+                  key: ValueKey<int>(index),
                   message: messages[index],
                   showAvatar: index == 0 ||
                       messages[index].role != messages[index - 1].role,

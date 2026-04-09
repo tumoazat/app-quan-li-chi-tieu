@@ -100,6 +100,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
                         final dailyTotal = _calculateDailyTotal(dateTransactions);
                         
                         return Column(
+                          key: ValueKey<String>(dateGroup.toString()),
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             // Date header with daily total
@@ -173,12 +174,16 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
                   },
                   loading: () => ListView.builder(
                     itemCount: 5,
-                    itemBuilder: (context, index) => LoadingShimmer.listItem()
-                        .animate()
-                        .fadeIn(
-                          duration: 300.ms,
-                          delay: Duration(milliseconds: index * 100),
-                        ),
+                    itemBuilder: (context, index) => Padding(
+                      key: ValueKey<int>(index),
+                      padding: EdgeInsets.zero,
+                      child: LoadingShimmer.listItem()
+                          .animate()
+                          .fadeIn(
+                            duration: 300.ms,
+                            delay: Duration(milliseconds: index * 100),
+                          ),
+                    ),
                   ),
                   error: (error, stack) => EmptyState.error(
                     message: error.toString(),

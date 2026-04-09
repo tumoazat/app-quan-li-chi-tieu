@@ -32,6 +32,7 @@ class SmartExpenseApp extends ConsumerWidget {
           theme: AppTheme.lightTheme,
           darkTheme: AppTheme.darkTheme,
           themeMode: themeMode,
+          themeAnimationDuration: Duration.zero,
           
           // Router configuration
           routerConfig: router,
@@ -41,6 +42,10 @@ class SmartExpenseApp extends ConsumerWidget {
         // Show loading screen while checking auth state
         return MaterialApp(
           debugShowCheckedModeBanner: false,
+          theme: AppTheme.lightTheme,
+          darkTheme: AppTheme.darkTheme,
+          themeMode: themeMode,
+          themeAnimationDuration: Duration.zero,
           home: Scaffold(
             body: Center(
               child: Column(
@@ -70,6 +75,10 @@ class SmartExpenseApp extends ConsumerWidget {
         // Show error screen
         return MaterialApp(
           debugShowCheckedModeBanner: false,
+          theme: AppTheme.lightTheme,
+          darkTheme: AppTheme.darkTheme,
+          themeMode: themeMode,
+          themeAnimationDuration: Duration.zero,
           home: Scaffold(
             body: Center(
               child: Column(

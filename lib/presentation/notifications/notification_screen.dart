@@ -63,7 +63,11 @@ class NotificationScreen extends ConsumerWidget {
               itemCount: notifications.length,
               itemBuilder: (context, index) {
                 final notification = notifications[index];
-                return _NotificationTile(notification: notification);
+                return Padding(
+                  key: ValueKey<String>(notification.id),
+                  padding: EdgeInsets.zero,
+                  child: _NotificationTile(notification: notification),
+                );
               },
             ),
     );

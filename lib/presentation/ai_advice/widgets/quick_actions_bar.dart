@@ -40,6 +40,7 @@ class QuickActionsBar extends StatelessWidget {
               itemBuilder: (context, index) {
                 final action = QuickAction.defaults[index];
                 return Padding(
+                  key: ValueKey<int>(index),
                   padding: const EdgeInsets.symmetric(horizontal: 4),
                   child: _QuickActionChip(
                     action: action,

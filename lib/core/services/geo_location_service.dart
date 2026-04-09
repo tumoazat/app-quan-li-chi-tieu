@@ -15,6 +15,15 @@ class GeoLocationService {
   final _firestore = FirebaseFirestore.instance;
   final _auth = FirebaseAuth.instance;
 
+  // Approximate Vietnam bounding box to avoid showing invalid emulator points.
+  // Latitude: 8.0 -> 24.5, Longitude: 102.0 -> 110.0
+  bool _isVietnamCoordinate(double latitude, double longitude) {
+    return latitude >= 8.0 &&
+        latitude <= 24.5 &&
+        longitude >= 102.0 &&
+        longitude <= 110.0;
+  }
+
   /// Pre-request location permissions (call this at app startup)
   Future<void> requestLocationPermissions() async {
     try {
@@ -41,38 +50,14 @@ class GeoLocationService {
         final result = await Geolocator.requestPermission();
         debugPrint('📍 Permission request result: $result');
         if (result == LocationPermission.denied) {
-          debugPrint('❌ Permission denied, using default location for testing');
-          // Return a default location for testing (Ho Chi Minh City, Vietnam)
-          return Position(
-            latitude: 10.7769,
-            longitude: 106.6869,
-            timestamp: DateTime.now(),
-            accuracy: 50,
-            altitude: 0,
-            altitudeAccuracy: 0,
-            heading: 0,
-            headingAccuracy: 0,
-            speed: 0,
-            speedAccuracy: 0,
-          );
+          debugPrint('❌ Permission denied, no location available');
+          return null;
         }
       }
 
       if (permission == LocationPermission.deniedForever) {
-        debugPrint('❌ Permission denied forever, using default location for testing');
-        // Return a default location for testing (Ho Chi Minh City, Vietnam)
-        return Position(
-          latitude: 10.7769,
-          longitude: 106.6869,
-          timestamp: DateTime.now(),
-          accuracy: 50,
-          altitude: 0,
-          altitudeAccuracy: 0,
-          heading: 0,
-          headingAccuracy: 0,
-          speed: 0,
-          speedAccuracy: 0,
-        );
+        debugPrint('❌ Permission denied forever, no location available');
+        return null;
       }
 
       debugPrint('📍 Getting current position...');
@@ -82,20 +67,17 @@ class GeoLocationService {
       debugPrint('✅ Location received: ${position.latitude}, ${position.longitude}');
       return position;
     } catch (e) {
-      debugPrint('⚠️ Error getting location: $e, using default location');
-      // Return a default location on error (Ho Chi Minh City, Vietnam)
-      return Position(
-        latitude: 10.7769,
-        longitude: 106.6869,
-        timestamp: DateTime.now(),
-        accuracy: 50,
-        altitude: 0,
-        altitudeAccuracy: 0,
-        heading: 0,
-        headingAccuracy: 0,
-        speed: 0,
-        speedAccuracy: 0,
-      );
+      debugPrint('⚠️ Error getting location: $e, trying last known position');
+      try {
+        final lastKnown = await Geolocator.getLastKnownPosition();
+        if (lastKnown != null) {
+          debugPrint('✅ Last known location: ${lastKnown.latitude}, ${lastKnown.longitude}');
+        }
+        return lastKnown;
+      } catch (e2) {
+        debugPrint('❌ No last known location: $e2');
+        return null;
+      }
     }
   }
 
@@ -203,6 +185,14 @@ class GeoLocationService {
       final locationSpending = <String, double>{};
       for (final doc in snapshot.docs) {
         try {
+          final location = doc['location'];
+          if (location is! GeoPoint) continue;
+
+          // Skip points outside Vietnam for this app's map analytics.
+          if (!_isVietnamCoordinate(location.latitude, location.longitude)) {
+            continue;
+          }
+
           // Try to get address, fall back to coordinates
           String address = (doc.data().containsKey('address') 
               ? doc['address'] as String? 
@@ -211,11 +201,7 @@ class GeoLocationService {
           final amount = (doc['amount'] as num?)?.toDouble() ?? 0;
 
           if (address == 'Unknown Location') {
-            // Try to get from location GeoPoint
-            final location = doc['location'];
-            if (location is GeoPoint) {
-              address = '${location.latitude.toStringAsFixed(2)}, ${location.longitude.toStringAsFixed(2)}';
-            }
+            address = '${location.latitude.toStringAsFixed(2)}, ${location.longitude.toStringAsFixed(2)}';
           }
 
           locationSpending[address] = (locationSpending[address] ?? 0) + amount;
@@ -251,14 +237,22 @@ class GeoLocationService {
           .get();
 
       return snapshot.docs
-          .map((doc) => {
-                'latitude': (doc['location'] as GeoPoint).latitude,
-                'longitude': (doc['location'] as GeoPoint).longitude,
-                'amount': doc['amount'],
-                'category': doc['category'],
-                'address': doc['address'],
-                'date': doc['date'],
-              })
+          .where((doc) {
+            final location = doc['location'];
+            if (location is! GeoPoint) return false;
+            return _isVietnamCoordinate(location.latitude, location.longitude);
+          })
+          .map((doc) {
+            final location = doc['location'] as GeoPoint;
+            return {
+              'latitude': location.latitude,
+              'longitude': location.longitude,
+              'amount': doc['amount'],
+              'category': doc['category'],
+              'address': doc['address'],
+              'date': doc['date'],
+            };
+          })
           .toList();
     } catch (e) {
       print('Error getting heatmap data: $e');

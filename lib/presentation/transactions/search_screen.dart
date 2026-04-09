@@ -117,7 +117,11 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                 return ListView.builder(
                   itemCount: filtered.length,
                   itemBuilder: (context, index) {
-                    return _buildTransactionItem(filtered[index]);
+                    return Padding(
+                      key: ValueKey<String>(filtered[index].id),
+                      padding: EdgeInsets.zero,
+                      child: _buildTransactionItem(filtered[index]),
+                    );
                   },
                 );
               },

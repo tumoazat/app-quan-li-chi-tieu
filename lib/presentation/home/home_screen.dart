@@ -80,6 +80,7 @@ class HomeScreen extends ConsumerWidget {
                         itemBuilder: (context, index) {
                           final transaction = transactions[index];
                           return TransactionItem(
+                            key: ValueKey<String>(transaction.id),
                             transaction: transaction,
                             onTap: () {
                               showModalBottomSheet(
@@ -135,6 +136,7 @@ class HomeScreen extends ConsumerWidget {
                     loading: () => Column(
                       children: List.generate(3, (index) =>
                         Container(
+                          key: ValueKey<int>(index),
                           height: 72,
                           margin: const EdgeInsets.only(bottom: 12),
                           decoration: BoxDecoration(
