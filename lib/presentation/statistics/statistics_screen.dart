@@ -20,17 +20,18 @@ class StatisticsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final now = DateTime.now();
     final monthKey = '${now.year}-${now.month}';
-    final stats = ref.watch(monthlyStatsProvider(monthKey));
+    final statsAsync = ref.watch(monthlyStatsProvider(monthKey));
 
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20),
-        child: stats.transactionCount == 0
-            ? EmptyState.noData()
-                .animate()
-                .fadeIn(duration: 500.ms)
-                .scaleXY(begin: 0.9, end: 1.0, duration: 500.ms)
-            : SingleChildScrollView(
+        child: statsAsync.when(
+          data: (stats) => stats.transactionCount == 0
+              ? EmptyState.noData()
+                  .animate()
+                  .fadeIn(duration: 500.ms)
+                  .scaleXY(begin: 0.9, end: 1.0, duration: 500.ms)
+              : SingleChildScrollView(
                 physics: const BouncingScrollPhysics(),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
