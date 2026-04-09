@@ -8,7 +8,7 @@ import '../../core/utils/currency_formatter.dart';
 
 // ============================================
 // 🤖 MULTI-PROVIDER AI CHAT SERVICE
-// Hỗ trợ: Claude, Gemini, OpenAI, Groq
+// Hỗ trợ: Claude, Gemini, OpenAI, Groq, OpenRouter
 // Tự động fallback khi provider nào lỗi
 // ============================================
 
@@ -17,7 +17,7 @@ class AiProvider {
   final String name;
   final String apiKey;
   final String model;
-  final String type; // 'gemini', 'claude', 'openai', 'groq'
+  final String type; // 'gemini', 'claude', 'openai', 'groq', 'openrouter'
   bool isAvailable;
 
   AiProvider({
@@ -318,6 +318,33 @@ Mạo hiểm: 10% tiết kiệm, 10% vàng, 40% chứng khoán, 40% crypto
       ));
     }
 
+    // 2.5 OpenRouter (OpenAI-compatible, hỗ trợ nhiều model free)
+    final openRouterKey = dotenv.env['OPENROUTER_API_KEY'] ?? '';
+    final openRouterPrimaryModel =
+        (dotenv.env['OPENROUTER_MODEL_PRIMARY'] ?? '').trim();
+    final openRouterFallbackModel =
+        (dotenv.env['OPENROUTER_MODEL_FALLBACK'] ?? '').trim();
+
+    if (openRouterKey.isNotEmpty) {
+      _providers.add(AiProvider(
+        name: 'OpenRouter Primary',
+        apiKey: openRouterKey,
+        model: openRouterPrimaryModel.isNotEmpty
+            ? openRouterPrimaryModel
+            : 'meta-llama/llama-3.3-70b-instruct:free',
+        type: 'openrouter',
+      ));
+
+      _providers.add(AiProvider(
+        name: 'OpenRouter Fallback',
+        apiKey: openRouterKey,
+        model: openRouterFallbackModel.isNotEmpty
+            ? openRouterFallbackModel
+            : 'google/gemma-3-27b-it:free',
+        type: 'openrouter',
+      ));
+    }
+
     // 3. Google Gemini
     final geminiKey = dotenv.env['GEMINI_API_KEY'] ?? '';
     if (geminiKey.isNotEmpty) {
@@ -404,6 +431,9 @@ Mạo hiểm: 10% tiết kiệm, 10% vàng, 40% chứng khoán, 40% crypto
       case 'groq':
         baseUrl = 'https://api.groq.com/openai/v1/chat/completions';
         break;
+      case 'openrouter':
+        baseUrl = 'https://openrouter.ai/api/v1/chat/completions';
+        break;
       case 'openai':
       default:
         baseUrl = 'https://api.openai.com/v1/chat/completions';
@@ -421,12 +451,24 @@ Mạo hiểm: 10% tiết kiệm, 10% vàng, 40% chứng khoán, 40% crypto
       'content': '$userMessage\n\n[Dữ liệu tài chính:\n$context]',
     });
 
+    final headers = <String, String>{
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ${provider.apiKey}',
+    };
+
+    // OpenRouter khuyến nghị thêm metadata để theo dõi traffic app.
+    if (provider.type == 'openrouter') {
+      final appUrl = (dotenv.env['APP_PUBLIC_URL'] ?? '').trim();
+      final appName = (dotenv.env['APP_NAME'] ?? 'Smart Expense').trim();
+      if (appUrl.isNotEmpty) {
+        headers['HTTP-Referer'] = appUrl;
+      }
+      headers['X-Title'] = appName;
+    }
+
     final response = await http.post(
       Uri.parse(baseUrl),
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ${provider.apiKey}',
-      },
+      headers: headers,
       body: jsonEncode({
         'model': provider.model,
         'max_tokens': 2048,
@@ -524,6 +566,7 @@ Mạo hiểm: 10% tiết kiệm, 10% vàng, 40% chứng khoán, 40% crypto
             break;
           case 'openai':
           case 'groq':
+          case 'openrouter':
             responseText = await _callOpenAICompatible(provider, userMessage, financialContext);
             break;
           case 'gemini':
