@@ -535,8 +535,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                                     },
                               child: Text(
                                 'Đăng ký',
-                                style: AppTypography.bodyMedium(context)
-                                    .copyWith(
+                                style: const TextStyle().copyWith(
                                   color: AppColors.primary,
                                   fontWeight: FontWeight.w600,
                                 ),

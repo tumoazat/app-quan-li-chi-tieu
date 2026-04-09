@@ -49,7 +49,7 @@ class _TransactionMapScreenState extends ConsumerState<TransactionMapScreen> {
       maxLng = maxLng < lng ? lng : maxLng;
 
       // Size marker based on amount
-      final size = (amount as num).toDouble() / 1000;
+      final size = amount.toDouble() / 1000;
       final clampedSize = (size > 50 ? 50 : size < 20 ? 20 : size).toDouble();
 
       markers.add(

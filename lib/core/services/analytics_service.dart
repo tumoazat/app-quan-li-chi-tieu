@@ -11,7 +11,11 @@ class AnalyticsService {
 
   /// Theo dõi sự kiện tùy chỉnh
   static Future<void> trackEvent(String eventName, {Map<String, dynamic>? params}) async {
-    await _analytics.logEvent(name: eventName, parameters: params);
+    // Firebase Analytics chỉ nhận Object cho giá trị parameter.
+    final mappedParams = params?.map(
+      (key, value) => MapEntry<String, Object>(key, value as Object),
+    );
+    await _analytics.logEvent(name: eventName, parameters: mappedParams);
   }
 
   /// Theo dõi đăng nhập
