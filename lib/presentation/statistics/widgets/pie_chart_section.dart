@@ -52,16 +52,20 @@ class _PieChartSectionState extends State<PieChartSection> {
                   PieChartData(
                     pieTouchData: PieTouchData(
                       touchCallback: (FlTouchEvent event, pieTouchResponse) {
-                        setState(() {
-                          if (!event.isInterestedForInteractions ||
-                              pieTouchResponse == null ||
-                              pieTouchResponse.touchedSection == null) {
-                            touchedIndex = -1;
-                            return;
+                        if (!event.isInterestedForInteractions ||
+                            pieTouchResponse == null ||
+                            pieTouchResponse.touchedSection == null) {
+                          if (touchedIndex != -1) {
+                            setState(() => touchedIndex = -1);
                           }
-                          touchedIndex = pieTouchResponse
-                              .touchedSection!.touchedSectionIndex;
-                        });
+                          return;
+                        }
+
+                        final nextIndex =
+                            pieTouchResponse.touchedSection!.touchedSectionIndex;
+                        if (nextIndex != touchedIndex) {
+                          setState(() => touchedIndex = nextIndex);
+                        }
                       },
                     ),
                     borderData: FlBorderData(show: false),
@@ -153,7 +157,7 @@ class _LegendItem extends StatelessWidget {
             boxShadow: isSelected
                 ? [
                     BoxShadow(
-                      color: color.withOpacity(0.5),
+                      color: color.withValues(alpha: 0.5),
                       blurRadius: 8,
                       spreadRadius: 2,
                     ),

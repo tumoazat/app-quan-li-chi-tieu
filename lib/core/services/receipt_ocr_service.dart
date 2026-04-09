@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 
 class ReceiptOCRService {
@@ -9,15 +11,26 @@ class ReceiptOCRService {
 
   ReceiptOCRService._internal();
 
+  bool _isProcessing = false;
+  static const Duration _ocrTimeout = Duration(seconds: 12);
+
   late final TextRecognizer _textRecognizer =
       TextRecognizer(script: TextRecognitionScript.latin);
 
   /// Extract amount from receipt image
   Future<Map<String, dynamic>> extractReceiptInfo(String imagePath) async {
+    if (_isProcessing) {
+      return {
+        'success': false,
+        'error': 'OCR đang xử lý, vui lòng thử lại sau vài giây',
+      };
+    }
+
+    _isProcessing = true;
     try {
       final inputImage = InputImage.fromFilePath(imagePath);
       final RecognizedText recognizedText =
-          await _textRecognizer.processImage(inputImage);
+          await _textRecognizer.processImage(inputImage).timeout(_ocrTimeout);
 
       final fullText = recognizedText.text;
       final amount = _extractAmount(fullText);
@@ -36,36 +49,53 @@ class ReceiptOCRService {
         'success': false,
         'error': e.toString(),
       };
+    } finally {
+      _isProcessing = false;
     }
   }
 
-  /// Extract amount using regex patterns
+  /// Extract amount using regex patterns (optimized for Vietnamese format)
   double _extractAmount(String text) {
-    // Pattern: 50000, 50.000, 50,00, 50k, 50m
-    final patterns = [
-      RegExp(r'(\d+)[.,]?(\d{3})[.,]?(\d{2})'),
-      RegExp(r'(\d+)[km](?:\s|$)'),
-      RegExp(r'(\d{2,})[.,](\d{2})'),
-      RegExp(r'(\d+)'),
-    ];
-
-    for (final pattern in patterns) {
-      final match = pattern.firstMatch(text);
-      if (match != null) {
-        String amount = match.group(1)!;
-        final suffix = match.group(2) ?? '';
-
-        double value = double.tryParse(amount) ?? 0;
-
-        if (suffix.contains('k')) value *= 1000;
-        if (suffix.contains('m')) value *= 1000000;
-        if (suffix.contains('b')) value *= 1000000000;
-
-        if (value > 0 && value < 1000000000) {
+    // Vietnamese currency format: 45,000 VND or -VND 45,000 or similar
+    // Strategy: look for patterns near VND keyword first, then any standalone number
+    
+    // Pattern 1: Amount with VND keyword (e.g., "-VND 45,000" or "VND 45000")
+    final vndPattern = RegExp(r'(?:VND|₫|đ)\s*-?\s*([0-9]{1,3}(?:[.,][0-9]{3})*)', 
+      caseSensitive: false);
+    var match = vndPattern.firstMatch(text);
+    if (match != null) {
+      String numStr = match.group(1)!.replaceAll(RegExp(r'[,.]'), '');
+      final value = double.tryParse(numStr) ?? 0;
+      if (value > 500 && value < 1000000000) {
+        return value;
+      }
+    }
+    
+    // Pattern 2: Standalone currency amount (e.g., "45,000" or "45.000")
+    final amountPattern = RegExp(r'\b(\d{1,3}(?:[.,]\d{3})+)\b');
+    final matches = amountPattern.allMatches(text);
+    
+    if (matches.isNotEmpty) {
+      // Take the first significant number (usually appears before others in receipt)
+      for (final m in matches) {
+        String numStr = m.group(1)!.replaceAll(RegExp(r'[,.]'), '');
+        final value = double.tryParse(numStr) ?? 0;
+        if (value > 500 && value < 100000000) {
           return value;
         }
       }
     }
+    
+    // Pattern 3: Fallback - any number >= 1000
+    final fallbackPattern = RegExp(r'\b(\d{4,})\b');
+    match = fallbackPattern.firstMatch(text);
+    if (match != null) {
+      final value = double.tryParse(match.group(1)!) ?? 0;
+      if (value > 500 && value < 1000000000) {
+        return value;
+      }
+    }
+    
     return 0.0;
   }
 

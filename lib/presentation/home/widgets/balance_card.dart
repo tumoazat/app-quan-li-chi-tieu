@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../../providers/transaction_provider.dart';
-import '../../../providers/statistics_provider.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/utils/currency_formatter.dart';
@@ -44,12 +43,7 @@ class BalanceCard extends ConsumerWidget {
         return _buildCard(context, 0, 0, 0, isLoading: true);
       },
       error: (error, stack) {
-        final stats = ref.watch(
-          monthlyStatsProvider(monthKey),
-        );
-        return _buildCard(
-          context, stats.balance, stats.totalIncome, stats.totalExpense,
-        );
+        return _buildCard(context, 0, 0, 0);
       },
     );
   }

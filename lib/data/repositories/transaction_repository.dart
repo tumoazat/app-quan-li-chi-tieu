@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import '../models/transaction_model.dart';
 
 class TransactionRepository {
@@ -75,25 +76,31 @@ class TransactionRepository {
     }
   }
 
-  // Get transactions by month
+  // Get transactions by month (with Firestore-level filtering to prevent ANR)
   Stream<List<TransactionModel>> getTransactionsByMonth(
     String userId,
     int year,
     int month,
   ) {
     try {
+      // Calculate date range for the month
+      final startDate = DateTime(year, month, 1);
+      final endDate = DateTime(year, month + 1, 0, 23, 59, 59);
+      
       return _getTransactionsCollection(userId)
+          .where('date', isGreaterThanOrEqualTo: startDate)
+          .where('date', isLessThanOrEqualTo: endDate)
+          .orderBy('date', descending: true)
           .snapshots()
           .map((snapshot) {
-        final transactions = snapshot.docs
+        return snapshot.docs
             .map((doc) => TransactionModel.fromFirestore(doc))
-            .where((t) => t.date.year == year && t.date.month == month)
             .toList();
-        transactions.sort((a, b) => b.date.compareTo(a.date));
-        return transactions;
       });
     } catch (e) {
-      throw Exception('Failed to get transactions by month: $e');
+      debugPrint('❌ Failed to get transactions by month: $e');
+      // Fallback: return empty stream instead of throwing
+      return Stream.value([]);
     }
   }
 

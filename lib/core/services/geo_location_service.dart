@@ -19,6 +19,9 @@ class GeoLocationService {
 
   GeoLocationService._internal();
 
+  static const Duration _permissionTimeout = Duration(seconds: 6);
+  static const Duration _positionTimeout = Duration(seconds: 8);
+
   final _firestore = FirebaseFirestore.instance;
   final _auth = FirebaseAuth.instance;
 
@@ -35,10 +38,11 @@ class GeoLocationService {
   Future<void> requestLocationPermissions() async {
     try {
       debugPrint('📍 Pre-requesting location permissions...');
-      final permission = await Geolocator.checkPermission();
+      final permission =
+          await Geolocator.checkPermission().timeout(_permissionTimeout);
       if (permission == LocationPermission.denied) {
         debugPrint('📍 Permissions denied, requesting...');
-        await Geolocator.requestPermission();
+        await Geolocator.requestPermission().timeout(_permissionTimeout);
       }
     } catch (e) {
       debugPrint('⚠️ Error requesting permissions: $e');
@@ -49,12 +53,14 @@ class GeoLocationService {
   Future<Position?> getCurrentLocation() async {
     try {
       debugPrint('📍 Checking location permission...');
-      final permission = await Geolocator.checkPermission();
+      final permission =
+          await Geolocator.checkPermission().timeout(_permissionTimeout);
       debugPrint('📍 Permission status: $permission');
       
       if (permission == LocationPermission.denied) {
         debugPrint('📍 Requesting location permission...');
-        final result = await Geolocator.requestPermission();
+        final result =
+            await Geolocator.requestPermission().timeout(_permissionTimeout);
         debugPrint('📍 Permission request result: $result');
         if (result == LocationPermission.denied) {
           debugPrint('❌ Permission denied, no location available');
@@ -72,13 +78,14 @@ class GeoLocationService {
       // Ưu tiên độ chính xác cao để pin map/realtime route ổn định hơn.
       final position = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high,
-      );
+      ).timeout(_positionTimeout);
       debugPrint('✅ Location received: ${position.latitude}, ${position.longitude}');
       return position;
     } catch (e) {
       debugPrint('⚠️ Error getting location: $e, trying last known position');
       try {
-        final lastKnown = await Geolocator.getLastKnownPosition();
+        final lastKnown = await Geolocator.getLastKnownPosition()
+            .timeout(_positionTimeout, onTimeout: () => null);
         if (lastKnown != null) {
           debugPrint('✅ Last known location: ${lastKnown.latitude}, ${lastKnown.longitude}');
         }

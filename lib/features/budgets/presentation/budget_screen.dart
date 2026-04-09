@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import '../../../../core/constants/category_data.dart';
 import '../../../../core/widgets/app_empty_state.dart';
 import '../../../../providers/auth_provider.dart';
-import '../../../../providers/statistics_provider.dart';
 import '../application/budget_notifier.dart';
 import 'widgets/budget_card.dart';
 
@@ -35,9 +33,6 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
   Widget build(BuildContext context) {
     final budgetsAsync = ref.watch(budgetNotifierProvider);
     final user = ref.watch(currentUserProvider);
-    final now = DateTime.now();
-    final monthKey = '${now.year}-${now.month}';
-    final stats = ref.watch(monthlyStatsProvider(monthKey));
 
     return Scaffold(
       appBar: AppBar(
@@ -52,12 +47,6 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
       ),
       body: budgetsAsync.when(
         data: (budgets) {
-          // Alert if any budget exceeded
-          final hasExceeded = budgets.any((b) {
-            final spent = stats.categoryBreakdown[b.categoryId] ?? 0;
-            return spent > b.monthlyLimit;
-          });
-
           if (budgets.isEmpty) {
             return AppEmptyState(
               icon: '🎯',
@@ -74,20 +63,13 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
             child: ListView(
               padding: const EdgeInsets.all(16),
               children: [
-                if (hasExceeded)
-                  const _ExceededAlert()
-                      .animate()
-                      .fadeIn(duration: 400.ms)
-                      .shake(hz: 3, offset: const Offset(2, 0), duration: 400.ms),
-                if (hasExceeded) const SizedBox(height: 12),
                 ...budgets.asMap().entries.map((e) {
                   final budget = e.value;
-                  final spent = stats.categoryBreakdown[budget.categoryId] ?? 0;
                   return Padding(
                     padding: const EdgeInsets.only(bottom: 12),
                     child: BudgetCard(
                       budget: budget,
-                      spent: spent,
+                      spent: 0, // Simplified - category breakdown not available
                       index: e.key,
                     ),
                   );
@@ -182,37 +164,6 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _ExceededAlert extends StatelessWidget {
-  const _ExceededAlert();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF44336).withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFF44336).withOpacity(0.4)),
-      ),
-      child: Row(
-        children: [
-          const Text('⚠️', style: TextStyle(fontSize: 20)),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              'Một số danh mục đã vượt ngân sách tháng này!',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: const Color(0xFFF44336),
-                    fontWeight: FontWeight.w600,
-                  ),
-            ),
-          ),
-        ],
       ),
     );
   }

@@ -16,7 +16,14 @@ class BarChartSection extends ConsumerWidget {
       return const SizedBox.shrink();
     }
 
-    final maxValue = barChartData.map((e) => e.value).reduce((a, b) => a > b ? a : b);
+    final visibleData = barChartData.length > 7
+        ? barChartData.sublist(barChartData.length - 7)
+        : barChartData;
+
+    final maxValue =
+      visibleData.map((e) => e.value).reduce((a, b) => a > b ? a : b);
+    final safeMaxY = maxValue <= 0 ? 1.0 : maxValue * 1.2;
+    final safeInterval = safeMaxY / 4;
 
     return Card(
       child: Padding(
@@ -34,33 +41,9 @@ class BarChartSection extends ConsumerWidget {
               height: 250,
               child: BarChart(
                 BarChartData(
-                  alignment: BarChartAlignment.spaceAround,
-                  maxY: maxValue * 1.2,
-                  barTouchData: BarTouchData(
-                    enabled: true,
-                    touchTooltipData: BarTouchTooltipData(
-                      getTooltipColor: (group) => Theme.of(context)
-                          .colorScheme
-                          .surfaceContainerHighest,
-                      tooltipPadding: const EdgeInsets.all(8),
-                      tooltipMargin: 8,
-                      getTooltipItem: (group, groupIndex, rod, rodIndex) {
-                        return BarTooltipItem(
-                          'Ngày ${group.x.toInt()}\n',
-                          AppTypography.labelSmall(context),
-                          children: [
-                            TextSpan(
-                              text: CurrencyFormatter.formatVND(rod.toY),
-                              style: AppTypography.labelMedium(context).copyWith(
-                                fontWeight: FontWeight.bold,
-                                color: Theme.of(context).colorScheme.primary,
-                              ),
-                            ),
-                          ],
-                        );
-                      },
-                    ),
-                  ),
+                  alignment: BarChartAlignment.spaceEvenly,
+                  maxY: safeMaxY,
+                  barTouchData: BarTouchData(enabled: false),
                   titlesData: FlTitlesData(
                     show: true,
                     rightTitles: const AxisTitles(
@@ -72,6 +55,7 @@ class BarChartSection extends ConsumerWidget {
                     bottomTitles: AxisTitles(
                       sideTitles: SideTitles(
                         showTitles: true,
+                        interval: 1,
                         getTitlesWidget: (value, meta) {
                           return Padding(
                             padding: const EdgeInsets.only(top: 8),
@@ -87,6 +71,7 @@ class BarChartSection extends ConsumerWidget {
                     leftTitles: AxisTitles(
                       sideTitles: SideTitles(
                         showTitles: true,
+                        interval: safeInterval,
                         getTitlesWidget: (value, meta) {
                           return Text(
                             CurrencyFormatter.formatCompact(value),
@@ -101,19 +86,18 @@ class BarChartSection extends ConsumerWidget {
                   gridData: FlGridData(
                     show: true,
                     drawVerticalLine: false,
-                    horizontalInterval: maxValue / 5,
+                    horizontalInterval: safeInterval,
                     getDrawingHorizontalLine: (value) {
                       return FlLine(
                         color: Theme.of(context)
                             .colorScheme
                             .outline
-                            .withOpacity(0.2),
+                            .withValues(alpha: 0.2),
                         strokeWidth: 1,
-                        dashArray: [5, 5],
                       );
                     },
                   ),
-                  barGroups: barChartData.asMap().entries.map((entry) {
+                  barGroups: visibleData.asMap().entries.map((entry) {
                     final dataPoint = entry.value;
                     final day = int.parse(dataPoint.label);
                     
@@ -125,12 +109,15 @@ class BarChartSection extends ConsumerWidget {
                           gradient: LinearGradient(
                             colors: [
                               Theme.of(context).colorScheme.primary,
-                              Theme.of(context).colorScheme.primary.withOpacity(0.5),
+                              Theme.of(context)
+                                  .colorScheme
+                                  .primary
+                                  .withValues(alpha: 0.5),
                             ],
                             begin: Alignment.bottomCenter,
                             end: Alignment.topCenter,
                           ),
-                          width: 16,
+                          width: 14,
                           borderRadius: const BorderRadius.vertical(
                             top: Radius.circular(4),
                           ),
@@ -139,6 +126,7 @@ class BarChartSection extends ConsumerWidget {
                     );
                   }).toList(),
                 ),
+                duration: Duration.zero,
               ),
             ),
           ],
