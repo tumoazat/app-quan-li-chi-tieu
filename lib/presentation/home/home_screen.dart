@@ -12,6 +12,10 @@ import 'widgets/balance_card.dart';
 import 'widgets/quick_actions_row.dart';
 import 'widgets/transaction_item.dart';
 
+/// Màn hình trang chủ:
+/// - Tổng quan số dư.
+/// - Hành động nhanh.
+/// - Danh sách giao dịch gần đây.
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 

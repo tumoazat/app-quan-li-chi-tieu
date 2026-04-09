@@ -29,6 +29,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     super.dispose();
   }
 
+  /// Debounce input tìm kiếm để giảm rebuild/liên tục filter dữ liệu.
   void _onSearchChanged(String value) {
     // Debounce 300ms
     _lastSearchTime = DateTime.now();
@@ -40,6 +41,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     });
   }
 
+  /// Lọc danh sách giao dịch theo text, type, date range và amount range.
   List<TransactionModel> _filterTransactions(List<TransactionModel> transactions) {
     return transactions.where((t) {
       // Lọc theo text search (note hoặc categoryId)
@@ -194,6 +196,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     );
   }
 
+  /// Hiển thị bottom sheet cấu hình bộ lọc nâng cao.
   void _showFilterBottomSheet() {
     showModalBottomSheet(
       context: context,

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../../data/models/chat_message.dart';
 
+/// Thanh action gợi ý để người dùng gửi prompt nhanh cho AI.
 class QuickActionsBar extends StatelessWidget {
   final void Function(QuickAction action) onActionTap;
 
@@ -68,6 +69,7 @@ class _QuickActionChip extends StatelessWidget {
     required this.index,
   });
 
+  /// Item chip đơn lẻ với animation xuất hiện theo thứ tự.
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;

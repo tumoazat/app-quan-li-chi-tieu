@@ -4,6 +4,7 @@ import '../../data/models/notification_model.dart';
 import '../../providers/notification_provider.dart';
 import '../../core/theme/app_typography.dart';
 
+/// Màn hình danh sách thông báo trong ứng dụng.
 class NotificationScreen extends ConsumerWidget {
   const NotificationScreen({super.key});
 
@@ -79,6 +80,9 @@ class _NotificationTile extends ConsumerWidget {
 
   const _NotificationTile({required this.notification});
 
+  /// Tile thông báo có hỗ trợ:
+  /// - Vuốt để xóa.
+  /// - Nhấn để đánh dấu đã đọc.
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final icon = _getIcon(notification.type);

@@ -4,6 +4,13 @@ import 'package:appchitieu/core/services/voice_input_service.dart';
 import 'package:appchitieu/core/constants/category_data.dart';
 import 'package:appchitieu/features/ai_categorization/data/keyword_repository.dart';
 
+/// Màn hình nhập giao dịch bằng giọng nói.
+///
+/// Flow:
+/// 1) Bắt đầu nghe qua `voiceInputProvider`.
+/// 2) Nhận text realtime.
+/// 3) Parse số tiền + category.
+/// 4) Trả payload về màn hình tạo giao dịch.
 class VoiceInputScreen extends ConsumerStatefulWidget {
   const VoiceInputScreen({Key? key}) : super(key: key);
 
@@ -30,6 +37,7 @@ class _VoiceInputScreenState extends ConsumerState<VoiceInputScreen> with Ticker
     super.dispose();
   }
 
+  /// Gọi service speech-to-text để bắt đầu phiên nghe.
   Future<void> _startListening() async {
     final voiceNotifier = ref.read(voiceInputProvider.notifier);
     await voiceNotifier.startListening(onResult: (result) {
@@ -41,11 +49,13 @@ class _VoiceInputScreenState extends ConsumerState<VoiceInputScreen> with Ticker
     });
   }
 
+  /// Dừng phiên nghe hiện tại.
   Future<void> _stopListening() async {
     final voiceNotifier = ref.read(voiceInputProvider.notifier);
     await voiceNotifier.stopListening();
   }
 
+  /// Parse nội dung speech thành dữ liệu giao dịch chuẩn để `Navigator.pop`.
   Future<void> _parseAndReturn() async {
     final voiceText = ref.read(voiceInputProvider).recognizedText.isNotEmpty
         ? ref.read(voiceInputProvider).recognizedText
@@ -74,6 +84,7 @@ class _VoiceInputScreenState extends ConsumerState<VoiceInputScreen> with Ticker
     }
   }
 
+  /// Suy luận category chi tiêu từ keyword map.
   String? _inferExpenseCategoryId(String lowerText) {
     String? bestCategoryId;
     int bestLen = 0;
@@ -91,6 +102,7 @@ class _VoiceInputScreenState extends ConsumerState<VoiceInputScreen> with Ticker
     return bestCategoryId;
   }
 
+  /// Tách số tiền VND từ câu nói (hỗ trợ k/tr/triệu/tỷ...).
   double _extractAmountVnd(String input) {
     final text = input.toLowerCase();
 

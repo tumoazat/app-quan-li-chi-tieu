@@ -8,6 +8,12 @@ import 'widgets/chat_bubble.dart';
 import 'widgets/quick_actions_bar.dart';
 import 'widgets/financial_summary_header.dart';
 
+/// Màn hình chat AI tư vấn tài chính.
+///
+/// Chức năng chính:
+/// - Hiển thị hội thoại user/assistant.
+/// - Hiển thị nhanh summary thu/chi theo tháng.
+/// - Cung cấp quick actions để gửi prompt mẫu.
 class AiAdviceScreen extends ConsumerStatefulWidget {
   const AiAdviceScreen({super.key});
 
@@ -29,6 +35,7 @@ class _AiAdviceScreenState extends ConsumerState<AiAdviceScreen> {
     super.dispose();
   }
 
+  /// Cuộn xuống cuối danh sách tin nhắn sau khi có message mới.
   void _scrollToBottom() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scrollController.hasClients) {
@@ -41,6 +48,7 @@ class _AiAdviceScreenState extends ConsumerState<AiAdviceScreen> {
     });
   }
 
+  /// Gửi tin nhắn tới `chatProvider` và reset trạng thái input.
   void _sendMessage(String text) {
     if (text.trim().isEmpty) return;
     ref.read(chatProvider.notifier).sendMessage(text);

@@ -3,6 +3,13 @@ import 'package:geolocator/geolocator.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
+/// Service xử lý toàn bộ nghiệp vụ vị trí cho giao dịch.
+///
+/// Bao gồm:
+/// - Xin quyền và lấy vị trí hiện tại.
+/// - Gắn `GeoPoint` vào giao dịch trong Firestore.
+/// - Tạo dữ liệu phân tích theo địa điểm.
+/// - Tạo dữ liệu heatmap cho màn hình bản đồ/thống kê.
 class GeoLocationService {
   static final GeoLocationService _instance = GeoLocationService._internal();
 
@@ -55,12 +62,14 @@ class GeoLocationService {
         }
       }
 
+      // Trường hợp người dùng chặn vĩnh viễn: không thể mở prompt xin quyền nữa.
       if (permission == LocationPermission.deniedForever) {
         debugPrint('❌ Permission denied forever, no location available');
         return null;
       }
 
       debugPrint('📍 Getting current position...');
+      // Ưu tiên độ chính xác cao để pin map/realtime route ổn định hơn.
       final position = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high,
       );
@@ -104,7 +113,8 @@ class GeoLocationService {
       }
 
       debugPrint('📌 Updating Firestore with location for user: $userId, tx: $transactionId');
-      await _firestore
+        // Chỉ update location/address, không ghi đè các trường business khác.
+        await _firestore
           .collection('users')
           .doc(userId)
           .collection('transactions')
@@ -182,6 +192,7 @@ class GeoLocationService {
           .where('location', isNotEqualTo: null)
           .get();
 
+      // Key: địa chỉ hiển thị, Value: tổng chi tiêu tại điểm đó.
       final locationSpending = <String, double>{};
       for (final doc in snapshot.docs) {
         try {
@@ -211,7 +222,7 @@ class GeoLocationService {
         }
       }
 
-      // Sort by highest spending
+      // Sắp xếp giảm dần để lấy Top địa điểm chi tiêu.
       final sortedLocations = locationSpending.entries.toList()
         ..sort((a, b) => b.value.compareTo(a.value));
 
@@ -236,6 +247,7 @@ class GeoLocationService {
           .where('location', isNotEqualTo: null)
           .get();
 
+      // Trả về list "phẳng" để UI heatmap consume trực tiếp.
       return snapshot.docs
           .where((doc) {
             final location = doc['location'];

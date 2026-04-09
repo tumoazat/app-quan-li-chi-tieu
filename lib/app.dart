@@ -5,6 +5,13 @@ import 'core/router/app_router.dart';
 import 'providers/theme_provider.dart';
 import 'providers/auth_provider.dart';
 
+/// Root widget của ứng dụng.
+///
+/// Nhiệm vụ chính:
+/// - Theo dõi trạng thái xác thực từ `authStateProvider`.
+/// - Khởi tạo `GoRouter` theo trạng thái đăng nhập.
+/// - Áp dụng theme sáng/tối từ `themeModeProvider`.
+/// - Render màn hình loading/error trong quá trình bootstrap.
 class SmartExpenseApp extends ConsumerWidget {
   const SmartExpenseApp({super.key});
 

@@ -15,6 +15,7 @@ import 'add_transaction_sheet.dart';
 import 'widgets/filter_chips.dart';
 import 'widgets/month_selector.dart';
 
+/// Màn hình danh sách giao dịch theo tháng, hỗ trợ filter thu/chi.
 class TransactionsScreen extends ConsumerStatefulWidget {
   const TransactionsScreen({super.key});
 
@@ -197,6 +198,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
     );
   }
 
+  /// Lọc danh sách theo bộ lọc hiện tại (`all`, `expense`, `income`).
   List<TransactionModel> _filterTransactions(List<TransactionModel> transactions) {
     if (_selectedFilter == 'all') {
       return transactions;
@@ -207,6 +209,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
     }
   }
 
+  /// Nhóm giao dịch theo ngày để render dạng section.
   Map<DateTime, List<TransactionModel>> _groupTransactionsByDate(
     List<TransactionModel> transactions,
   ) {
@@ -237,6 +240,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
     return sortedGrouped;
   }
 
+  /// Tính tổng tiền của một nhóm giao dịch trong ngày.
   double _calculateDailyTotal(List<TransactionModel> transactions) {
     double total = 0;
     for (final transaction in transactions) {
@@ -245,6 +249,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
     return total;
   }
 
+  /// Xóa giao dịch và hiển thị thông báo kết quả.
   void _deleteTransaction(TransactionModel transaction) async {
     final user = ref.read(currentUserProvider);
     if (user == null) return;

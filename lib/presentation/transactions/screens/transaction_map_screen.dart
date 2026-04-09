@@ -427,16 +427,19 @@ class _TransactionMapScreenState extends State<TransactionMapScreen>
 
   static const LatLng _defaultCenter = LatLng(10.7769, 106.7009);
 
+  // ----- Realtime location state -----
   LatLng _currentCenter = _defaultCenter;
   Position? _currentPosition;
   bool _mapMovedToUser = false;
   bool _followMyLocation = true;
 
+  // ----- Loading & status state -----
   bool _loadingPlaces = false;
   bool _loadingRoute = false;
   String? _locationError;
   String _currentAddress = 'Đang xác định vị trí...';
 
+  // ----- Nearby places + search state -----
   List<Map<String, dynamic>> _nearbyPlaces = [];
   StreamSubscription<Position>? _positionSubscription;
   DateTime? _lastNearbyFetchAt;
@@ -447,6 +450,7 @@ class _TransactionMapScreenState extends State<TransactionMapScreen>
   bool _isSearchingStore = false;
   List<Map<String, dynamic>> _searchResults = [];
 
+  // ----- Routing state -----
   LatLng? _selectedDestination;
   String? _selectedDestinationLabel;
   List<LatLng> _routePoints = [];
@@ -471,8 +475,10 @@ class _TransactionMapScreenState extends State<TransactionMapScreen>
   }
 
   Future<void> _initRealtimeLocation() async {
+    // Lấy vị trí ban đầu và di chuyển map tới user.
     await _updateCurrentLocation(moveMap: true);
 
+    // Mở stream vị trí để cập nhật realtime khi user di chuyển.
     _positionSubscription?.cancel();
     _positionSubscription = Geolocator.getPositionStream(
       locationSettings: const LocationSettings(
@@ -489,6 +495,7 @@ class _TransactionMapScreenState extends State<TransactionMapScreen>
     Position? incoming,
   }) async {
     try {
+      // Kiểm tra GPS + quyền trước khi đọc vị trí.
       final isEnabled = await Geolocator.isLocationServiceEnabled();
       if (!isEnabled) {
         if (mounted) {
@@ -532,6 +539,7 @@ class _TransactionMapScreenState extends State<TransactionMapScreen>
         _mapMovedToUser = true;
       }
 
+      // Cập nhật địa chỉ hiện tại + POI lân cận + route realtime.
       await _updateCurrentAddress(newCenter);
       await _fetchNearbySpendingPlaces(newCenter);
       await _maybeRealtimeReroute(newCenter);
@@ -573,6 +581,7 @@ class _TransactionMapScreenState extends State<TransactionMapScreen>
   Future<void> _fetchNearbySpendingPlaces(LatLng center) async {
     if (_loadingPlaces) return;
 
+    // Chống gọi API quá dày: chỉ fetch lại khi đủ thời gian hoặc user di chuyển đủ xa.
     final now = DateTime.now();
     if (_lastNearbyFetchAt != null && _lastNearbyFetchCenter != null) {
       final seconds = now.difference(_lastNearbyFetchAt!).inSeconds;
@@ -589,6 +598,7 @@ class _TransactionMapScreenState extends State<TransactionMapScreen>
     });
 
     const radius = 2500;
+    // Query quán ăn/cafe/shop theo bán kính quanh user hiện tại.
     final query = '''
 [out:json][timeout:18];
 (
@@ -604,6 +614,7 @@ out center 120;
 ''';
 
     try {
+      // Dùng 2 endpoint để tăng độ ổn định (fallback khi endpoint chính lỗi/quá tải).
       final endpoints = <String>[
         'https://overpass-api.de/api/interpreter',
         'https://overpass.kumi.systems/api/interpreter',
@@ -729,6 +740,7 @@ out center 120;
     required LatLng destination,
     required String label,
   }) async {
+    // Reset route cũ và bật trạng thái loading route.
     setState(() {
       _selectedDestination = destination;
       _selectedDestinationLabel = label;
@@ -739,6 +751,7 @@ out center 120;
     });
 
     try {
+      // Dùng OSRM public API để tính route lái xe.
       final from = _currentCenter;
       final uri = Uri.parse(
         'https://router.project-osrm.org/route/v1/driving/'
@@ -793,6 +806,7 @@ out center 120;
   }
 
   List<Map<String, dynamic>> _filteredNearbyPlacesByQuery() {
+    // Lọc nhanh trên dữ liệu nearby hiện có.
     final query = _storeSearchQuery.trim().toLowerCase();
     if (query.isEmpty) return _nearbyPlaces;
 
@@ -804,6 +818,7 @@ out center 120;
   }
 
   List<Map<String, dynamic>> _visiblePlaces() {
+    // Merge kết quả local + remote, đồng thời loại duplicate.
     final base = _filteredNearbyPlacesByQuery();
     if (_searchResults.isEmpty) return base;
 
@@ -822,6 +837,7 @@ out center 120;
   }
 
   Future<void> _searchStoresRemotely() async {
+    // Search theo tên cửa hàng/quán ăn trên Overpass trong bán kính lớn hơn nearby.
     final query = _storeSearchQuery.trim();
     if (query.isEmpty || _isSearchingStore) return;
 
@@ -946,6 +962,7 @@ out center 80;
   }
 
   Future<void> _maybeRealtimeReroute(LatLng currentPosition) async {
+    // Chỉ reroute khi đã có điểm đến, đang bật auto reroute, và thỏa điều kiện throttle.
     if (!_autoRerouteEnabled || _selectedDestination == null || _loadingRoute) {
       return;
     }
@@ -971,6 +988,7 @@ out center 80;
   }
 
   void _clearRoute() {
+    // Xóa toàn bộ trạng thái route để quay về chế độ xem bản đồ bình thường.
     setState(() {
       _selectedDestination = null;
       _selectedDestinationLabel = null;
@@ -1400,6 +1418,7 @@ out center 80;
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    // Cleanup tài nguyên liên quan stream/input.
     _positionSubscription?.cancel();
     _storeSearchController.dispose();
     _storeSearchFocusNode.dispose();
